@@ -1,4 +1,4 @@
-// client/src/pages/DashboardPage.jsx (CORRECTED)
+// client/src/pages/DashboardPage.jsx (REDESIGNED SIDEBAR, FEED & INTERACTIVE LESSONS)
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useSelector } from 'react-redux'
@@ -6,7 +6,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   FiPlus, FiCode, FiClock, FiActivity, FiUsers, FiMoreVertical,
   FiArrowRight, FiZap, FiTrendingUp, FiStar, FiGitBranch,
-  FiPlay, FiFolder, FiSearch, FiGlobe, FiArchive, FiX
+  FiPlay, FiFolder, FiSearch, FiGlobe, FiArchive, FiX, FiLayers,
+  FiBookOpen, FiSmile, FiHeart, FiMessageSquare, FiSettings, FiUser, FiBell, FiGrid
 } from 'react-icons/fi'
 import { formatDistanceToNow } from 'date-fns'
 import Sidebar from '../components/layout/Sidebar'
@@ -26,94 +27,48 @@ const langColors = {
   default: '#6B7280',
 }
 
-const StatCard = ({ icon: Icon, label, value, color, trend }) => (
-  <div style={{
-    background: 'var(--surface)',
-    border: '1px solid var(--border)',
-    borderRadius: 'var(--radius)',
-    padding: '20px 22px',
-    display: 'flex',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: 12,
-    transition: 'all var(--transition)',
-  }}
-    onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--border-2)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
-    onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'none' }}
-  >
-    <div>
-      <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>{label}</p>
-      <p style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.04em', color: 'var(--text)' }}>{value}</p>
-      {trend && <p style={{ fontSize: '0.75rem', color: 'var(--success)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 3 }}><FiTrendingUp size={11} /> {trend}</p>}
-    </div>
-    <div style={{ width: 40, height: 40, borderRadius: 12, background: color + '18', border: `1px solid ${color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-      <Icon size={18} color={color} />
-    </div>
-  </div>
-)
+// ────── MOCK DATA FOR THE NEW FEATURES ──────
+const ACTIVE_FRIENDS = [
+  { username: 'alex_dev', status: 'online', avatar: 'https://ui-avatars.com/api/?name=Alex&background=58A6FF&color=fff' },
+  { username: 'sarah_code', status: 'online', avatar: 'https://ui-avatars.com/api/?name=Sarah&background=A371F7&color=fff' },
+  { username: 'brandon_99', status: 'offline', avatar: 'https://ui-avatars.com/api/?name=Brandon&background=6b7280&color=fff' }
+]
 
-const ProjectCard = ({ project, index, onAction }) => {
-  const langColor = langColors[project.language?.toLowerCase()] || langColors.default
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05, duration: 0.3 }}
-    >
-      <Link to={`/editor/${project._id}`} style={{ textDecoration: 'none', display: 'block' }}>
-        <div style={{
-          background: 'var(--surface)',
-          border: '1px solid var(--border)',
-          borderRadius: 'var(--radius)',
-          padding: '20px',
-          height: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          transition: 'all var(--transition)',
-          cursor: 'pointer',
-        }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--border-2)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = 'var(--shadow)' }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none' }}
-        >
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: langColor + '18', border: `1px solid ${langColor}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <FiCode size={16} color={langColor} />
-              </div>
-              <div style={{ minWidth: 0 }}>
-                <h3 style={{ fontWeight: 700, fontSize: '0.9375rem', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 160 }}>{project.title}</h3>
-                <span style={{ fontSize: '0.7rem', color: langColor, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{project.language}</span>
-              </div>
-            </div>
-            <button
-              onClick={e => { e.preventDefault(); onAction(project) }}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', padding: 4, borderRadius: 6, transition: 'all var(--transition-fast)' }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface-2)'; e.currentTarget.style.color = 'var(--text)' }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-3)' }}
-            >
-              <FiMoreVertical size={15} />
-            </button>
-          </div>
+const COMMUNITY_FEED = [
+  {
+    id: 1,
+    author: 'sara_dev',
+    avatar: 'https://ui-avatars.com/api/?name=Sara&background=3FB950&color=fff',
+    title: 'Exploring Async/Await Performance in JavaScript',
+    snippet: `async function fetchData() {\n  const user = await api.getUser();\n  const stats = await api.getStats(user.id);\n  return { user, stats };\n}`,
+    likes: 24,
+    comments: 8,
+    time: '2 hours ago'
+  },
+  {
+    id: 2,
+    author: 'mike_t',
+    avatar: 'https://ui-avatars.com/api/?name=Mike&background=F0883E&color=fff',
+    title: 'Python List Comprehensions vs Map Filter Speedups',
+    snippet: `# Standard Map Filter\nfiltered = map(lambda x: x * 2, filter(lambda x: x % 2 == 0, nums))\n# Comprehension\nfiltered = [x * 2 for x in nums if x % 2 == 0]`,
+    likes: 42,
+    comments: 11,
+    time: '1 day ago'
+  }
+]
 
-          <p style={{ fontSize: '0.8125rem', color: 'var(--text-2)', lineHeight: 1.5, flex: 1, marginBottom: 16, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-            {project.description || 'No description provided.'}
-          </p>
-
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 14, borderTop: '1px solid var(--border)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              {project.members?.slice(0, 3).map((m, i) => (
-                <img key={i} src={m.user?.avatar || `https://ui-avatars.com/api/?name=${m.user?.username || 'U'}&background=3B82F6&color=fff&size=32`} alt="" style={{ width: 22, height: 22, borderRadius: '50%', border: '1.5px solid var(--surface)', marginLeft: i > 0 ? -8 : 0, objectFit: 'cover' }} />
-              ))}
-              {project.members?.length > 3 && <span style={{ fontSize: '0.7rem', color: 'var(--text-3)', marginLeft: 4 }}>+{project.members.length - 3}</span>}
-            </div>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-3)' }}>
-              {project.lastActivity ? formatDistanceToNow(new Date(project.lastActivity), { addSuffix: true }) : 'Recently'}
-            </span>
-          </div>
-        </div>
-      </Link>
-    </motion.div>
-  )
+const LEARNING_RESOURCES = {
+  java: [
+    { title: 'Variables & Data Types', desc: 'Understand Java primitives, references, static memory bounds, and variable declarations.', snippet: 'int score = 100;\nString username = "Sarah";\nfinal double PI = 3.14159;' },
+    { title: 'Object-Oriented Programming (OOP)', desc: 'Learn the pillars of OOP: inheritance, encapsulation, polymorphism, and abstraction.', snippet: 'public class Animal {\n    protected String name;\n    public abstract void makeSound();\n}' }
+  ],
+  python: [
+    { title: 'Lists, Tuples & Dicts', desc: 'Master Python collections, indexing, slicing, dict lookups, and iteration.', snippet: 'fruits = ["apple", "banana"]\nuser_profile = {"id": 1, "username": "alex"}' },
+    { title: 'List Comprehensions', desc: 'Write clean, pythonic list generation statements with optional filters.', snippet: 'squares = [x**2 for x in range(10) if x % 2 == 0]' }
+  ],
+  javascript: [
+    { title: 'Promises & Async/Await', desc: 'Handle asynchronous operations cleanly using Promise chains and try-catch async blocks.', snippet: 'const fetchUser = async (id) => {\n  try {\n    const res = await fetch(`/api/users/${id}`);\n    return await res.json();\n  } catch (err) { console.error(err); }\n}' }
+  ]
 }
 
 export default function DashboardPage() {
@@ -133,6 +88,12 @@ export default function DashboardPage() {
   const [language, setLanguage] = useState('javascript')
   const [isPublic, setIsPublic] = useState(false)
   const [creating, setCreating] = useState(false)
+
+  // Learning section selected language
+  const [learningLang, setLearningLang] = useState('javascript')
+
+  // Feed comment/likes state
+  const [feedPosts, setFeedPosts] = useState(COMMUNITY_FEED)
 
   useEffect(() => {
     fetchProjects()
@@ -186,230 +147,360 @@ export default function DashboardPage() {
     setIsPublic(false)
   }
 
-  const stats = [
-    { icon: FiFolder, label: 'Projects', value: user?.stats?.projectsCreated || 0, color: '#3B82F6', trend: '+2 this week' },
-    { icon: FiClock, label: 'Hours Coded', value: user?.stats?.hoursCoded || 0, color: '#8B5CF6', trend: '+12h this week' },
-    { icon: FiUsers, label: 'Collaborations', value: user?.stats?.collaborations || 0, color: '#22C55E' },
-    { icon: FiZap, label: 'AI Requests', value: user?.stats?.aiUsage || 0, color: '#F59E0B' },
-  ]
+  const handleLikePost = (id) => {
+    setFeedPosts(prev => prev.map(post => {
+      if (post.id === id) {
+        return { ...post, likes: post.likes + 1 }
+      }
+      return post
+    }))
+    toast.success('Snippet liked!')
+  }
 
-  const quickActions = [
-    { icon: FiPlus, label: 'New Project', desc: 'Start from scratch', color: '#3B82F6', onClick: () => setSearchParams({ new: 'true' }) },
-    { icon: FiGitBranch, label: 'Version History', desc: 'Browse snapshots', color: '#8B5CF6', onClick: () => setSearchParams({ tab: 'activity' }) },
-    { icon: FiUsers, label: 'Invite Team', desc: 'Collaborate together', color: '#22C55E', onClick: () => setSearchParams({ tab: 'collaborators' }) },
-    { icon: FiSearch, label: 'Explore', desc: 'Discover projects', color: '#F59E0B', onClick: () => setSearchParams({ tab: 'explore' }) },
+  const stats = [
+    { icon: FiFolder, label: 'Projects', value: user?.stats?.projectsCreated || 0, color: '#58A6FF' },
+    { icon: FiClock, label: 'Hours Coded', value: user?.stats?.hoursCoded || 0, color: '#A371F7' },
+    { icon: FiUsers, label: 'Collaborations', value: user?.stats?.collaborators || 0, color: '#3FB950' },
+    { icon: FiZap, label: 'AI Reviews', value: user?.stats?.aiUsage || 0, color: '#F0883E' },
   ]
 
   return (
-    <div style={{ height: '100vh', display: 'flex', background: 'var(--bg)', color: 'var(--text)' }}>
-      <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
+    <div className="min-h-screen bg-[#0D1117] text-[#F0F6FC] font-sans flex flex-col">
+      <Navbar />
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        <Navbar onMenuToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
+      {/* Main Workspace Frame */}
+      <div className="flex-1 flex overflow-hidden">
+        
+        {/* Modern Minimalist Sidebar Menu */}
+        <aside className="w-64 bg-[#161B22] border-r border-gray-800 flex flex-col py-6 shrink-0">
+          <div className="px-6 mb-6">
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#58A6FF]">Navigation</span>
+          </div>
 
-        <main style={{ flex: 1, overflowY: 'auto', paddingTop: 56 }}>
-          <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 28px' }}>
+          <nav className="flex-1 flex flex-col gap-1 px-3">
+            {[
+              { id: 'dashboard', label: 'Home Dashboard', icon: FiGrid },
+              { id: 'projects', label: 'My Projects', icon: FiFolder },
+              { id: 'explore', label: 'Community Feed', icon: FiGlobe },
+              { id: 'learning', label: 'Learning Section', icon: FiBookOpen },
+              { id: 'friends', label: 'Friends & Groups', icon: FiUsers }
+            ].map(item => (
+              <button
+                key={item.id}
+                onClick={() => setSearchParams({ tab: item.id })}
+                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition-colors text-left ${tab === item.id ? 'bg-blue-600 text-white shadow-md shadow-blue-900/25' : 'text-gray-400 hover:text-white hover:bg-gray-800/40'}`}
+              >
+                <item.icon size={15} />
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </nav>
 
-            {tab === 'dashboard' && (
-              <>
-                {/* Header */}
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, marginBottom: 32, flexWrap: 'wrap', justifyContent: 'space-between' }}>
-                  <div>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 4 }}>
-                      Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}, {user?.username} 👋
-                    </h1>
-                    <p style={{ color: 'var(--text-2)', fontSize: '0.9375rem' }}>Here's what's happening with your projects today.</p>
+          <div className="px-6 mt-auto pt-6 border-t border-gray-850 flex flex-col gap-4">
+            <div className="flex items-center gap-3">
+              <img src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.username || 'U'}`} className="w-8 h-8 rounded-full border border-gray-700" alt="" />
+              <div className="flex flex-col min-w-0">
+                <span className="text-xs font-bold text-gray-200 block truncate">{user?.username}</span>
+                <span className="text-[9px] text-[#58A6FF] block font-semibold uppercase tracking-wider">{user?.role || 'Developer'}</span>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        {/* Dashboard Center View Area */}
+        <main className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar">
+          
+          {tab === 'dashboard' && (
+            <div className="flex flex-col gap-8">
+              {/* Top Banner Greeting */}
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                  <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">Welcome back, {user?.username}!</h1>
+                  <p className="text-xs text-gray-400 mt-1">Review active group project channels or study dynamic code tutorials.</p>
+                </div>
+                <Button 
+                  onClick={() => setSearchParams({ new: 'true' })}
+                  className="bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold py-2.5 px-4 shadow-lg shadow-blue-900/25 flex items-center gap-2"
+                >
+                  <FiPlus size={14} /> New Project
+                </Button>
+              </div>
+
+              {/* Responsive Dashboard Widgets grid */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {stats.map((st, i) => (
+                  <div key={i} className="p-4 bg-[#161B22] border border-gray-800 rounded-2xl flex items-center justify-between shadow-sm">
+                    <div>
+                      <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider block mb-1">{st.label}</span>
+                      <span className="text-xl font-extrabold text-white">{st.value}</span>
+                    </div>
+                    <div className="w-8 h-8 rounded-lg bg-gray-800/40 flex items-center justify-center text-white">
+                      <st.icon size={15} style={{ color: st.color }} />
+                    </div>
                   </div>
-                  <Button onClick={() => setSearchParams({ new: 'true' })} style={{ boxShadow: '0 4px 16px rgba(59,130,246,0.3)', flexShrink: 0 }}>
-                    <FiPlus size={15} /> New Project
-                  </Button>
-                </div>
+                ))}
+              </div>
 
-                {/* Stats */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 36 }}>
-                  {stats.map((s, i) => (
-                    <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
-                      <StatCard {...s} />
-                    </motion.div>
-                  ))}
-                </div>
+              {/* Main Content Dashboard Split */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                {/* Left Panel: Recent Workspaces (Spans 2 columns) */}
+                <div className="lg:col-span-2 flex flex-col gap-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">Active Workspace Projects</span>
+                    <button onClick={() => setSearchParams({ tab: 'projects' })} className="text-[10px] text-[#58A6FF] font-semibold hover:underline flex items-center gap-1">
+                      See All <FiArrowRight size={10} />
+                    </button>
+                  </div>
 
-                {/* Quick Actions */}
-                <div style={{ marginBottom: 36 }}>
-                  <h2 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 14, letterSpacing: '-0.01em' }}>Quick Actions</h2>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
-                    {quickActions.map((a, i) => (
-                      <div key={i} onClick={a.onClick} style={{ textDecoration: 'none' }}>
-                        <div style={{
-                          background: 'var(--surface)',
-                          border: '1px solid var(--border)',
-                          borderRadius: 'var(--radius)',
-                          padding: '16px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 12,
-                          transition: 'all var(--transition)',
-                          cursor: 'pointer',
-                        }}
-                          onMouseEnter={e => { e.currentTarget.style.borderColor = a.color + '50'; e.currentTarget.style.background = a.color + '08'; e.currentTarget.style.transform = 'translateY(-1px)' }}
-                          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--surface)'; e.currentTarget.style.transform = 'none' }}
-                        >
-                          <div style={{ width: 36, height: 36, borderRadius: 10, background: a.color + '18', border: `1px solid ${a.color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            <a.icon size={16} color={a.color} />
-                          </div>
+                  {projects.length === 0 ? (
+                    <div className="p-8 bg-[#161B22] border border-gray-800 rounded-2xl text-center text-gray-400 text-xs">
+                      No active workspaces found. Create a project to start collaborating with friends!
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {projects.slice(0, 4).map((p, idx) => (
+                        <div key={p._id} className="p-5 bg-[#161B22] border border-gray-800 rounded-2xl hover:border-gray-700 transition-colors shadow-sm flex flex-col justify-between">
                           <div>
-                            <p style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--text)' }}>{a.label}</p>
-                            <p style={{ fontSize: '0.75rem', color: 'var(--text-3)' }}>{a.desc}</p>
+                            <div className="flex justify-between items-start gap-2 mb-2">
+                              <h3 className="font-extrabold text-sm text-white truncate max-w-[150px]">{p.title}</h3>
+                              <span className="px-2 py-0.5 rounded-full bg-gray-800 text-[9px] font-semibold uppercase text-gray-400 border border-gray-750">
+                                {p.language}
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-400 leading-relaxed mb-4 line-clamp-2">
+                              {p.description || 'No description provided.'}
+                            </p>
                           </div>
+                          <div className="flex justify-between items-center pt-3 border-t border-gray-850">
+                            <span className="text-[10px] text-gray-500">Active members: {p.members?.length || 1}</span>
+                            <Link to={`/editor/${p._id}`} className="px-3 py-1 bg-[#1e293b] hover:bg-gray-800 rounded-lg text-[10px] font-bold text-white transition-colors">
+                              Join Editor
+                            </Link>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Right Panel: Active Friends & Groups (Spans 1 column) */}
+                <div className="flex flex-col gap-4">
+                  <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">Active Friends</span>
+                  <div className="p-4 bg-[#161B22] border border-gray-800 rounded-2xl flex flex-col gap-4 shadow-sm">
+                    {ACTIVE_FRIENDS.map((f, i) => (
+                      <div key={i} className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2.5">
+                          <img src={f.avatar} className="w-7 h-7 rounded-full object-cover" alt="" />
+                          <span className="font-bold text-gray-200">@{f.username}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className={`w-2 h-2 rounded-full ${f.status === 'online' ? 'bg-green-500' : 'bg-gray-500'}`} />
+                          <span className="text-[10px] text-gray-400 capitalize">{f.status}</span>
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
-              </>
-            )}
 
-            {/* Content List */}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                <h2 style={{ fontSize: '1rem', fontWeight: 700, letterSpacing: '-0.01em', textTransform: 'capitalize' }}>
-                  {tab === 'dashboard' ? 'Recent Projects' : `${tab} Workspace`}
-                </h2>
-                {tab === 'dashboard' && (
-                  <button onClick={() => setSearchParams({ tab: 'projects' })} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.8125rem', color: 'var(--primary)', textDecoration: 'none', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer' }}
-                    onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
-                    onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
-                  >
-                    View all <FiArrowRight size={13} />
-                  </button>
-                )}
+              </div>
+            </div>
+          )}
+
+          {/* tab explore: Community feed */}
+          {tab === 'explore' && (
+            <div className="max-w-2xl mx-auto flex flex-col gap-6">
+              <div className="mb-4">
+                <h1 className="text-2xl font-black text-white">Community Developer Feed</h1>
+                <p className="text-xs text-gray-400 mt-1">Read and review code snippets, logs, and tutorials published by other users.</p>
               </div>
 
-              {loading ? (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
-                  {[1, 2, 3].map(i => <Skeleton key={i} style={{ height: 160 }} />)}
-                </div>
-              ) : projects.length === 0 ? (
-                <div style={{
-                  border: '1px dashed var(--border-2)',
-                  borderRadius: 'var(--radius-lg)',
-                  padding: '60px 24px',
-                  textAlign: 'center',
-                  background: 'var(--surface)',
-                }}>
-                  <div style={{ width: 56, height: 56, background: 'var(--surface-2)', border: '1px solid var(--border-2)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                    <FiCode size={24} color="var(--text-3)" />
+              {feedPosts.map((post) => (
+                <div key={post.id} className="p-5 bg-[#161B22] border border-gray-800 rounded-2xl shadow-sm flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <img src={post.avatar} className="w-8 h-8 rounded-full border border-gray-700 object-cover" alt="" />
+                      <div>
+                        <span className="text-xs font-bold text-gray-200">@{post.author}</span>
+                        <span className="text-[10px] text-gray-500 block">{post.time}</span>
+                      </div>
+                    </div>
                   </div>
-                  <h3 style={{ fontWeight: 700, marginBottom: 8 }}>No projects found</h3>
-                  <p style={{ color: 'var(--text-2)', fontSize: '0.875rem', marginBottom: 20 }}>Get started by creating a new workspace.</p>
-                  <Button onClick={() => setSearchParams({ new: 'true' })} style={{ boxShadow: '0 4px 16px rgba(59,130,246,0.3)' }}>
-                    <FiPlus size={15} /> Create Project
-                  </Button>
-                </div>
-              ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
-                  {projects.map((project, i) => (
-                    <ProjectCard key={project._id} project={project} index={i} onAction={() => navigate(`/projects/${project._id}`)} />
-                  ))}
-                </div>
-              )}
-            </div>
 
-          </div>
+                  <div>
+                    <h3 className="text-sm font-extrabold text-white mb-2">{post.title}</h3>
+                    <pre className="p-4 bg-[#0d1117] rounded-xl border border-gray-850 font-mono text-[11px] leading-relaxed text-gray-300 overflow-x-auto">
+                      {post.snippet}
+                    </pre>
+                  </div>
+
+                  <div className="flex items-center gap-4 pt-3 border-t border-gray-850 text-xs text-gray-400">
+                    <button onClick={() => handleLikePost(post.id)} className="flex items-center gap-1.5 hover:text-red-400 transition-colors">
+                      <FiHeart size={14} /> <span>{post.likes}</span>
+                    </button>
+                    <span className="flex items-center gap-1.5">
+                      <FiMessageSquare size={14} /> <span>{post.comments} comments</span>
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* tab learning: Tutorial Guides */}
+          {tab === 'learning' && (
+            <div className="flex flex-col gap-6 max-w-4xl mx-auto">
+              <div className="mb-4">
+                <h1 className="text-2xl font-black text-white">Interactive Learning Guides</h1>
+                <p className="text-xs text-gray-400 mt-1">Select a programming language to browse explanations, examples, and study templates.</p>
+              </div>
+
+              {/* Language selectors */}
+              <div className="flex gap-2 border-b border-gray-800 pb-3 shrink-0">
+                {['javascript', 'python', 'java'].map(lang => (
+                  <button
+                    key={lang}
+                    onClick={() => setLearningLang(lang)}
+                    className={`px-4 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors ${learningLang === lang ? 'bg-[#161B22] text-blue-400 border border-gray-750' : 'text-gray-400 hover:text-white'}`}
+                  >
+                    {lang}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex flex-col gap-6 mt-4">
+                {LEARNING_RESOURCES[learningLang].map((res, i) => (
+                  <div key={i} className="p-6 bg-[#161B22] border border-gray-800 rounded-2xl shadow-sm flex flex-col gap-4">
+                    <div>
+                      <h3 className="text-base font-extrabold text-white mb-1.5">{res.title}</h3>
+                      <p className="text-xs text-gray-400 leading-relaxed">{res.desc}</p>
+                    </div>
+
+                    <pre className="p-4 bg-[#0d1117] rounded-xl border border-gray-850 font-mono text-[11px] leading-relaxed text-gray-300 overflow-x-auto">
+                      {res.snippet}
+                    </pre>
+
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-[10px] text-gray-500 font-medium">Includes AI Mentor Review</span>
+                      <button 
+                        onClick={() => {
+                          toast.success('Starting interactive snippet workspace...');
+                          setSearchParams({ tab: 'dashboard' });
+                        }}
+                        className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 rounded-xl text-[10px] font-bold text-white transition-colors"
+                      >
+                        Try Code
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* standard tabs fallback */}
+          {tab === 'projects' && (
+            <div className="flex flex-col gap-6 max-w-4xl mx-auto">
+              <h1 className="text-2xl font-black text-white">My Workspace Projects</h1>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {projects.map((p, index) => {
+                  const langColor = langColors[p.language?.toLowerCase()] || langColors.default
+                  return (
+                    <div key={p._id} className="p-5 bg-[#161B22] border border-gray-800 rounded-2xl hover:border-gray-700 transition-colors shadow-sm flex flex-col justify-between">
+                      <div>
+                        <div className="flex justify-between items-start gap-2 mb-2">
+                          <h3 className="font-extrabold text-sm text-white truncate">{p.title}</h3>
+                          <span style={{ color: langColor }} className="text-[10px] font-extrabold uppercase">{p.language}</span>
+                        </div>
+                        <p className="text-xs text-gray-400 leading-relaxed mb-4 line-clamp-2">
+                          {p.description || 'No description provided.'}
+                        </p>
+                      </div>
+                      <div className="flex justify-between items-center pt-3 border-t border-gray-850">
+                        <span className="text-[10px] text-gray-500">Members: {p.members?.length || 1}</span>
+                        <Link to={`/editor/${p._id}`} className="px-3.5 py-1.5 bg-[#1e293b] hover:bg-gray-800 rounded-xl text-[10px] font-bold text-white transition-colors">
+                          Open Editor
+                        </Link>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
         </main>
       </div>
 
-      {/* Polish Create Project Dialog Modal */}
+      {/* Reusable Create Workspace modal */}
       <AnimatePresence>
         {isCreateOpen && (
-          <div style={{
-            position: 'fixed', inset: 0, zIndex: 1000,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)'
-          }}>
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 15 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              style={{
-                width: '100%', maxWidth: 460,
-                background: 'var(--surface)',
-                border: '1px solid var(--border-2)',
-                borderRadius: 'var(--radius-lg)',
-                overflow: 'hidden',
-                boxShadow: '0 20px 25px -5px rgba(0,0,0,0.5)'
-              }}
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="w-full max-w-md p-6 bg-[#161B22] border border-gray-800 rounded-2xl shadow-2xl text-white"
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
-                <h3 style={{ fontWeight: 700, fontSize: '1rem' }}>Create Workspace</h3>
-                <button onClick={closeCreateModal} style={{ background: 'none', border: 'none', color: 'var(--text-3)', cursor: 'pointer' }}>
-                  <FiX size={16} />
-                </button>
+              <div className="flex justify-between items-center mb-4">
+                <span className="text-sm font-bold uppercase tracking-wider text-blue-450">Create New Project</span>
+                <button onClick={closeCreateModal} className="text-gray-450 hover:text-white"><FiX size={16} /></button>
               </div>
 
-              <form onSubmit={handleCreateProject} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <Input
-                  label="Title"
-                  placeholder="my-awesome-app"
-                  value={title}
-                  onChange={e => setTitle(e.target.value)}
-                  required
-                />
+              <form onSubmit={handleCreateProject} className="flex flex-col gap-4">
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 500, color: 'var(--text-2)', marginBottom: 6 }}>Description</label>
-                  <textarea
-                    placeholder="Describe what your workspace does..."
-                    value={description}
-                    onChange={e => setDescription(e.target.value)}
-                    rows={3}
-                    style={{
-                      width: '100%', padding: '10px',
-                      background: 'var(--surface-2)', border: '1px solid var(--border-2)',
-                      borderRadius: 'var(--radius-sm)', color: 'var(--text)',
-                      fontFamily: 'inherit', fontSize: '0.875rem', outline: 'none'
-                    }}
+                  <label className="block text-xs text-gray-400 mb-1 font-semibold">Project Title</label>
+                  <input 
+                    type="text"
+                    value={title}
+                    onChange={e => setTitle(e.target.value)}
+                    placeholder="my-cool-app"
+                    className="w-full px-3.5 py-2 bg-[#0D1117] border border-gray-800 rounded-xl text-xs text-white outline-none focus:border-blue-500"
+                    required
                   />
                 </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 500, color: 'var(--text-2)', marginBottom: 6 }}>Language</label>
-                    <select
-                      value={language}
-                      onChange={e => setLanguage(e.target.value)}
-                      style={{
-                        width: '100%', padding: '9px 12px',
-                        background: 'var(--surface-2)', border: '1px solid var(--border-2)',
-                        borderRadius: 'var(--radius-sm)', color: 'var(--text)',
-                        fontSize: '0.875rem', outline: 'none', fontFamily: 'inherit'
-                      }}
-                    >
-                      <option value="javascript">JavaScript</option>
-                      <option value="typescript">TypeScript</option>
-                      <option value="python">Python</option>
-                      <option value="java">Java</option>
-                      <option value="cpp">C++</option>
-                      <option value="rust">Rust</option>
-                      <option value="go">Go</option>
-                    </select>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: '0.875rem', marginTop: 18 }}>
-                      <input
-                        type="checkbox"
-                        checked={isPublic}
-                        onChange={e => setIsPublic(e.target.checked)}
-                        style={{ width: 15, height: 15 }}
-                      />
-                      <span>Make public</span>
-                    </label>
-                  </div>
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1 font-semibold">Description</label>
+                  <textarea 
+                    value={description}
+                    onChange={e => setDescription(e.target.value)}
+                    placeholder="Describe what your workspace does..."
+                    rows={3}
+                    className="w-full px-3.5 py-2 bg-[#0D1117] border border-gray-800 rounded-xl text-xs text-white outline-none focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1 font-semibold">Programming Language</label>
+                  <select
+                    value={language}
+                    onChange={e => setLanguage(e.target.value)}
+                    className="w-full px-3.5 py-2 bg-[#0D1117] border border-gray-800 rounded-xl text-xs text-white outline-none"
+                  >
+                    <option value="javascript">JavaScript</option>
+                    <option value="python">Python</option>
+                    <option value="cpp">C++</option>
+                    <option value="java">Java</option>
+                    <option value="html">HTML/CSS</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="checkbox"
+                    checked={isPublic}
+                    onChange={e => setIsPublic(e.target.checked)}
+                    id="isPublic"
+                    className="w-4 h-4 rounded border-gray-700 bg-gray-900 focus:ring-0"
+                  />
+                  <label htmlFor="isPublic" className="text-xs text-gray-300">Make this project public for community exploration</label>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 12 }}>
-                  <Button type="button" variant="ghost" onClick={closeCreateModal}>Cancel</Button>
-                  <Button type="submit" isLoading={creating}>Build Workspace</Button>
-                </div>
+                <Button 
+                  type="submit" 
+                  disabled={creating}
+                  className="w-full bg-blue-650 hover:bg-blue-600 rounded-xl py-2.5 font-bold text-xs shadow-lg text-white mt-2"
+                >
+                  {creating ? 'Building Workspace...' : 'Build Workspace'}
+                </Button>
               </form>
             </motion.div>
           </div>

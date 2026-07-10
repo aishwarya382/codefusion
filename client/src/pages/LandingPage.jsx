@@ -1,372 +1,227 @@
+// client/src/pages/LandingPage.jsx (REDESIGNED FOR AI & COLLABORATION)
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useSelector } from 'react-redux'
 import {
-  FiCode, FiZap, FiUsers, FiMessageSquare, FiVideo,
-  FiGitBranch, FiCheck, FiArrowRight, FiPlay, FiStar,
+  FiCode, FiZap, FiUsers, FiMessageSquare, FiArrowRight, FiStar, FiLayers, FiGlobe, FiSmile, FiCpu
 } from 'react-icons/fi'
 import Navbar from '../components/layout/Navbar'
 import { selectIsAuthenticated } from '../store/slices/authSlice'
 
-const fadeUp = { hidden: { opacity: 0, y: 24 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.4, 0, 0.2, 1] } } }
-const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.08 } } }
+const fadeUp = {
+  hidden: { opacity: 0, y: 24 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.4, 0, 0.2, 1] } }
+}
+
+const stagger = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.08 } }
+}
 
 const features = [
-  { icon: FiUsers, title: 'Multiplayer Editing', desc: 'Code together in real-time with zero latency, live cursors, and presence tracking.', color: '#3B82F6' },
-  { icon: FiZap, title: 'AI Copilot', desc: 'Context-aware AI assistance to generate, explain, fix, and refactor code instantly.', color: '#8B5CF6' },
-  { icon: FiCode, title: 'Secure Execution', desc: 'Run code in 10+ languages in sandboxed containers directly from your browser.', color: '#22C55E' },
-  { icon: FiGitBranch, title: 'Version History', desc: 'Automatic snapshots and branching so you never lose a single line of code.', color: '#F59E0B' },
-  { icon: FiMessageSquare, title: 'Integrated Chat', desc: 'Discuss contextually with threads, reactions, and code snippets without leaving the editor.', color: '#EF4444' },
-  { icon: FiVideo, title: 'Quick Huddles', desc: 'Start a video call with one click, right inside your project workspace.', color: '#06B6D4' },
-]
-
-const tiers = [
-  { name: 'Hobby', price: '$0', period: '/mo', desc: 'Perfect for personal projects', features: ['3 Projects', 'Basic Collaboration', 'Standard AI (50 req/day)', 'Community Support'] },
-  { name: 'Pro', price: '$12', period: '/mo', desc: 'For professional developers', popular: true, features: ['Unlimited Projects', 'Advanced AI (unlimited)', 'Priority Execution', 'Video Huddles', 'Version History'] },
-  { name: 'Team', price: '$29', period: '/mo', desc: 'For growing engineering teams', features: ['Everything in Pro', 'SSO & Admin Controls', 'Advanced Analytics', 'Custom Domains', 'Priority Support'] },
+  { icon: FiUsers, title: 'Multiplayer Real-time IDE', desc: 'Code together in real-time with zero latency, live cursor labels, presence indicators, and team workspaces.', color: '#58A6FF' },
+  { icon: FiZap, title: 'AI-Powered Reviewer', desc: 'Instant code reviews before publishing. Receives complexity scoring, error warnings, and refactoring recommendations.', color: '#A371F7' },
+  { icon: FiCode, title: 'Multi-Language Support', desc: 'Write, debug, and execute code in 17 popular programming languages, from Python/Java to Rust and Go.', color: '#3FB950' },
+  { icon: FiMessageSquare, title: 'Team Knowledge Chats', desc: 'Discuss contextually inside code channels, threads, and learning groups without any tab switching.', color: '#F0883E' },
+  { icon: FiLayers, title: 'Collaborative Groups', desc: 'Create study and developer squads, share resource libraries, pin announcements, and discuss with AI mentors.', color: '#F85149' },
+  { icon: FiGlobe, title: 'Showcase Feed', desc: 'Publish code logs, notes, and full projects to a GitHub+Medium style community timeline. Follow authors, comment, and like.', color: '#58A6FF' }
 ]
 
 export default function LandingPage() {
   const isAuth = useSelector(selectIsAuthenticated)
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', overflowX: 'hidden' }}>
+    <div className="min-h-screen bg-[#0D1117] text-[#F0F6FC] font-sans overflow-x-hidden selection:bg-blue-600/30">
       <Navbar />
 
-      {/* Hero */}
-      <section style={{
-        paddingTop: 120, paddingBottom: 80,
-        background: 'radial-gradient(ellipse 80% 60% at 50% -20%, rgba(59,130,246,0.15) 0%, transparent 70%)',
-        textAlign: 'center',
-      }}>
-        <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 24px' }}>
-          <motion.div initial="hidden" animate="visible" variants={stagger}>
-            <motion.div variants={fadeUp} style={{ marginBottom: 24 }}>
-              <span className="cf-badge cf-badge-primary" style={{ fontSize: '0.75rem', padding: '4px 12px' }}>
-                <FiStar size={11} /> CodeFusion v3.0 — Early Access
+      {/* Hero Section */}
+      <section className="relative pt-32 pb-24 text-center bg-[radial-gradient(ellipse_80%_60%_at_50%_-20%,rgba(88,166,255,0.15)_0%,transparent_75%)]">
+        <div className="max-w-5xl mx-auto px-6">
+          <motion.div initial="hidden" animate="visible" variants={stagger} className="flex flex-col items-center">
+            
+            {/* Version Badge */}
+            <motion.div variants={fadeUp} className="mb-6">
+              <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#161B22] border border-gray-800 text-[11px] font-semibold text-[#58A6FF]">
+                <FiStar size={11} className="animate-pulse" /> CodeFusion v4.0 — Collaborative Workspace
               </span>
             </motion.div>
 
-            <motion.h1 variants={fadeUp} style={{
-              fontSize: 'clamp(2.5rem, 6vw, 4.5rem)',
-              fontWeight: 800,
-              letterSpacing: '-0.04em',
-              lineHeight: 1.1,
-              marginBottom: 24,
-            }}>
-              Code together.{' '}
-              <span className="gradient-text">Ship faster.</span>
+            {/* Headline */}
+            <motion.h1 
+              variants={fadeUp} 
+              className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tight leading-[1.05] text-white max-w-4xl mb-6"
+            >
+              Code Together. <br />
+              <span className="bg-gradient-to-r from-[#58A6FF] via-[#A371F7] to-[#F0883E] bg-clip-text text-transparent">Learn Faster. Build Better.</span>
             </motion.h1>
 
-            <motion.p variants={fadeUp} style={{
-              fontSize: '1.125rem',
-              color: 'var(--text-2)',
-              maxWidth: 560,
-              margin: '0 auto 40px',
-              lineHeight: 1.7,
-            }}>
-              The modern collaborative coding platform with AI assistance, real-time multiplayer editing, and instant code execution.
+            {/* Subtitle */}
+            <motion.p 
+              variants={fadeUp} 
+              className="text-base sm:text-lg md:text-xl text-gray-400 max-w-2xl leading-relaxed mb-10 font-normal"
+            >
+              Collaborate with friends, learn programming, receive AI-powered code reviews, publish projects, and improve your coding skills—all in one platform.
             </motion.p>
 
-            <motion.div variants={fadeUp} style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+            {/* Action Buttons */}
+            <motion.div variants={fadeUp} className="flex gap-4 justify-center flex-wrap">
               {isAuth ? (
-                <Link to="/dashboard" className="cf-btn cf-btn-primary cf-btn-lg">
+                <Link 
+                  to="/dashboard" 
+                  className="px-6 py-3 bg-[#3FB950] hover:bg-green-600 rounded-xl text-sm font-bold flex items-center gap-2 transition-all shadow-lg shadow-green-900/30 text-white"
+                >
                   Go to Dashboard <FiArrowRight size={16} />
                 </Link>
               ) : (
                 <>
-                  <Link to="/register" className="cf-btn cf-btn-primary cf-btn-lg" style={{ boxShadow: '0 0 24px rgba(59,130,246,0.35)' }}>
-                    Start for free <FiArrowRight size={16} />
+                  <Link 
+                    to="/register" 
+                    className="px-6 py-3 bg-blue-600 hover:bg-blue-500 rounded-xl text-sm font-bold flex items-center gap-2 transition-all shadow-lg shadow-blue-900/30 text-white"
+                  >
+                    Start Coding <FiArrowRight size={16} />
                   </Link>
-                  <a href="#features" className="cf-btn cf-btn-secondary cf-btn-lg">
-                    Explore features
+                  <a 
+                    href="#features" 
+                    className="px-6 py-3 bg-[#161B22] hover:bg-gray-800 border border-gray-800 rounded-xl text-sm font-bold transition-all text-gray-300 hover:text-white"
+                  >
+                    Explore Community
                   </a>
                 </>
               )}
             </motion.div>
-
-            <motion.p variants={fadeUp} style={{ marginTop: 16, fontSize: '0.8125rem', color: 'var(--text-3)' }}>
-              No credit card required · Free forever plan available
-            </motion.p>
           </motion.div>
         </div>
       </section>
 
-      {/* Editor Mockup */}
-      <motion.section
-        initial={{ opacity: 0, y: 48 }}
+      {/* Editor Mockup Section */}
+      <motion.section 
+        initial={{ opacity: 0, y: 32 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5, duration: 0.7, ease: [0.4, 0, 0.2, 1] }}
-        style={{ padding: '0 24px 100px', maxWidth: 1100, margin: '0 auto' }}
+        transition={{ delay: 0.3, duration: 0.6 }}
+        className="px-6 pb-24 max-w-5xl mx-auto"
       >
-        <div style={{
-          borderRadius: 16,
-          overflow: 'hidden',
-          border: '1px solid var(--border-2)',
-          boxShadow: '0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(59,130,246,0.1)',
-          background: '#0D1117',
-        }}>
-          {/* Window chrome */}
-          <div style={{
-            height: 44,
-            background: '#161B22',
-            borderBottom: '1px solid #30363D',
-            display: 'flex',
-            alignItems: 'center',
-            padding: '0 16px',
-            gap: 8,
-          }}>
-            <div style={{ display: 'flex', gap: 6 }}>
+        <div className="bg-[#161B22] border border-gray-800 rounded-2xl overflow-hidden shadow-2xl">
+          {/* Chrome header */}
+          <div className="h-11 bg-[#161B22] border-b border-gray-850 flex items-center px-4 justify-between">
+            <div className="flex gap-1.5">
               {['#FF5F56', '#FFBD2E', '#27C93F'].map((c, i) => (
-                <div key={i} style={{ width: 12, height: 12, borderRadius: '50%', background: c }} />
+                <div key={i} className="w-3 h-3 rounded-full" style={{ background: c }} />
               ))}
             </div>
-            <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-              <div style={{
-                display: 'flex', gap: 1,
-                background: '#0D1117',
-                borderRadius: 6,
-                overflow: 'hidden',
-                border: '1px solid #30363D',
-              }}>
-                {['main.ts', 'utils.ts', 'api.ts'].map((f, i) => (
-                  <div key={f} style={{
-                    padding: '4px 14px',
-                    fontSize: '0.75rem',
-                    color: i === 0 ? '#E6EDF3' : '#8B949E',
-                    background: i === 0 ? '#1C2128' : 'transparent',
-                    borderRight: '1px solid #30363D',
-                    cursor: 'pointer',
-                  }}>{f}</div>
-                ))}
-              </div>
+            <div className="flex bg-[#0D1117] border border-gray-800 rounded-lg px-3 py-1 text-xs text-gray-400 font-mono">
+              collab_workspace.js
             </div>
-            <div style={{ display: 'flex', gap: 6 }}>
-              {['#3B82F6', '#22C55E', '#8B5CF6'].map((c, i) => (
-                <div key={i} style={{ width: 24, height: 24, borderRadius: 6, background: c + '22', border: `1px solid ${c}44`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: c }} />
-                </div>
-              ))}
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] bg-green-500/10 text-green-400 px-2 py-0.5 border border-green-500/20 rounded font-semibold">Live Mode</span>
             </div>
           </div>
-          {/* Code area */}
-          <div style={{ display: 'flex', height: 340 }}>
-            {/* Line numbers */}
-            <div style={{
-              width: 48, background: '#0D1117',
-              borderRight: '1px solid #21262D',
-              padding: '20px 0',
-              textAlign: 'right',
-              fontFamily: 'JetBrains Mono, monospace',
-              fontSize: '0.75rem',
-              color: '#484F58',
-              lineHeight: '24px',
-              userSelect: 'none',
-              paddingRight: 12,
-            }}>
-              {Array.from({ length: 12 }, (_, i) => <div key={i}>{i + 1}</div>)}
-            </div>
-            {/* Code */}
-            <div style={{ flex: 1, padding: '20px 24px', fontFamily: 'JetBrains Mono, monospace', fontSize: '0.8125rem', lineHeight: '24px', overflowX: 'auto', position: 'relative' }}>
-              <div><span style={{ color: '#FF7B72' }}>import</span> <span style={{ color: '#E6EDF3' }}>{'{ '}</span><span style={{ color: '#79C0FF' }}>createServer</span><span style={{ color: '#E6EDF3' }}>{', '}</span><span style={{ color: '#79C0FF' }}>Socket</span><span style={{ color: '#E6EDF3' }}>{' }'}</span> <span style={{ color: '#FF7B72' }}>from</span> <span style={{ color: '#A5D6FF' }}>'codfusion'</span><span style={{ color: '#E6EDF3' }}>;</span></div>
-              <div>&nbsp;</div>
-              <div><span style={{ color: '#8B949E' }}>// 🚀 Real-time collaborative server</span></div>
-              <div><span style={{ color: '#FF7B72' }}>const</span> <span style={{ color: '#79C0FF' }}>app</span> <span style={{ color: '#E6EDF3' }}>=</span> <span style={{ color: '#D2A8FF' }}>createServer</span><span style={{ color: '#E6EDF3' }}>({'{'}</span></div>
-              <div>&nbsp;&nbsp;<span style={{ color: '#79C0FF' }}>port</span><span style={{ color: '#E6EDF3' }}>:</span> <span style={{ color: '#79C0FF' }}>3000</span><span style={{ color: '#E6EDF3' }}>,</span></div>
-              <div>&nbsp;&nbsp;<span style={{ color: '#79C0FF' }}>ai</span><span style={{ color: '#E6EDF3' }}>:</span> <span style={{ color: '#79C0FF' }}>true</span><span style={{ color: '#E6EDF3' }}>,</span></div>
-              <div>&nbsp;&nbsp;<span style={{ color: '#79C0FF' }}>collaboration</span><span style={{ color: '#E6EDF3' }}>:</span> <span style={{ color: '#79C0FF' }}>true</span><span style={{ color: '#E6EDF3' }}>,</span></div>
-              <div><span style={{ color: '#E6EDF3' }}>{'}'});</span></div>
-              <div>&nbsp;</div>
-              <div><span style={{ color: '#79C0FF' }}>app</span><span style={{ color: '#E6EDF3' }}>.</span><span style={{ color: '#D2A8FF' }}>start</span><span style={{ color: '#E6EDF3' }}>()</span><span style={{ color: '#E6EDF3' }}>.</span><span style={{ color: '#D2A8FF' }}>then</span><span style={{ color: '#E6EDF3' }}>(</span><span style={{ color: '#FF7B72' }}>()</span> <span style={{ color: '#FF7B72' }}>=&gt;</span> <span style={{ color: '#E6EDF3' }}>{'{'}</span></div>
-              <div>&nbsp;&nbsp;<span style={{ color: '#79C0FF' }}>console</span><span style={{ color: '#E6EDF3' }}>.</span><span style={{ color: '#D2A8FF' }}>log</span><span style={{ color: '#E6EDF3' }}>(</span><span style={{ color: '#A5D6FF' }}>'✓ Server running in real-time...'</span><span style={{ color: '#E6EDF3' }}>);</span></div>
-              <div><span style={{ color: '#E6EDF3' }}>{'}'});</span></div>
-              {/* Blinking cursor */}
-              <motion.div
-                animate={{ opacity: [1, 0, 1] }}
-                transition={{ duration: 1.1, repeat: Infinity }}
-                style={{ position: 'absolute', top: 20 + 24 * 9, left: 24 + 8 * 2, width: 2, height: 18, background: '#3B82F6', borderRadius: 1 }}
-              />
-              {/* Collaborator cursors */}
-              <div style={{ position: 'absolute', top: 20 + 24 * 4, left: 24 + 8 * 14, display: 'flex', alignItems: 'flex-start', gap: 0 }}>
-                <div style={{ width: 2, height: 18, background: '#22C55E', borderRadius: 1 }} />
-                <div style={{ background: '#22C55E', color: '#fff', fontSize: '0.6rem', padding: '1px 5px', borderRadius: '0 4px 4px 4px', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>Alex</div>
+
+          {/* Editor Body */}
+          <div className="flex flex-col md:flex-row h-72 font-mono text-xs text-gray-300">
+            {/* Editor workspace code */}
+            <div className="flex-1 p-5 bg-[#0D1117] border-b md:border-b-0 md:border-r border-gray-800 overflow-y-auto relative">
+              <span className="text-[#FF7B72]">import</span> {'{ '} <span className="text-[#79C0FF]">createWorkspace</span> {' }'} <span className="text-[#FF7B72]">from</span> <span className="text-[#A5D6FF]">"codefusion"</span>;
+              <br /><br />
+              <span className="text-gray-500">// 🚀 Setting up a live multi-cursor session with the team</span>
+              <br />
+              <span className="text-[#FF7B72]">const</span> session = <span className="text-[#D2A8FF]">createWorkspace</span>({'{'}
+              <br />
+              &nbsp;&nbsp;users: [<span className="text-[#A5D6FF]">"Sarah"</span>, <span className="text-[#A5D6FF]">"Alex"</span>],
+              <br />
+              &nbsp;&nbsp;aiMentor: <span className="text-[#79C0FF]">true</span>
+              <br />
+              {'}'});
+              <br /><br />
+              session.<span className="text-[#D2A8FF]">onConnect</span>(() =&gt; {'{'}
+              <br />
+              &nbsp;&nbsp;console.log(<span className="text-[#A5D6FF]">"✓ Connected successfully to group room."</span>);
+              <br />
+              {'}'});
+
+              {/* Cursor mocks */}
+              <div className="absolute top-[102px] left-[142px] flex flex-col">
+                <div className="w-[1.5px] h-4 bg-purple-500" />
+                <span className="bg-purple-600 text-white text-[8px] font-sans px-1 rounded-sm -mt-0.5 ml-0.5">Sarah</span>
+              </div>
+              <div className="absolute top-[126px] left-[262px] flex flex-col">
+                <div className="w-[1.5px] h-4 bg-[#58A6FF]" />
+                <span className="bg-[#58A6FF] text-white text-[8px] font-sans px-1 rounded-sm -mt-0.5 ml-0.5">Alex</span>
               </div>
             </div>
-            {/* Right panel */}
-            <div style={{
-              width: 220,
-              borderLeft: '1px solid #21262D',
-              background: '#161B22',
-              padding: 16,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 12,
-            }}>
-              <div style={{ fontSize: '0.7rem', fontWeight: 600, color: '#8B949E', textTransform: 'uppercase', letterSpacing: '0.08em' }}>AI Copilot</div>
-              <div style={{ background: '#0D1117', borderRadius: 8, padding: 10, border: '1px solid #30363D' }}>
-                <div style={{ fontSize: '0.7rem', color: '#8B949E', marginBottom: 6 }}>Suggestion</div>
-                <div style={{ fontSize: '0.7rem', color: '#A5D6FF', fontFamily: 'JetBrains Mono, monospace', lineHeight: 1.5 }}>
-                  Add error handling<br />with try/catch block
+
+            {/* AI Review Pane */}
+            <div className="w-full md:w-64 bg-[#161B22] p-4 flex flex-col justify-between">
+              <div className="flex flex-col gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-purple-400 flex items-center gap-1.5">
+                  <FiCpu size={12} /> AI Review Scorecard
+                </span>
+                <div className="p-3 bg-[#0D1117] rounded-xl border border-gray-800 text-xs">
+                  <div className="flex justify-between font-semibold mb-1">
+                    <span>Performance</span>
+                    <span className="text-green-400">9.5/10</span>
+                  </div>
+                  <div className="flex justify-between font-semibold">
+                    <span>Readability</span>
+                    <span className="text-[#58A6FF]">Solid</span>
+                  </div>
                 </div>
               </div>
-              <div style={{ fontSize: '0.7rem', fontWeight: 600, color: '#8B949E', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 4 }}>Online</div>
-              {[{ name: 'You', color: '#3B82F6' }, { name: 'Alex', color: '#22C55E' }, { name: 'Sam', color: '#8B5CF6' }].map(u => (
-                <div key={u.name} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ width: 22, height: 22, borderRadius: '50%', background: u.color + '33', border: `1.5px solid ${u.color}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', color: u.color, fontWeight: 700 }}>{u.name[0]}</div>
-                  <span style={{ fontSize: '0.75rem', color: '#E6EDF3' }}>{u.name}</span>
-                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#22C55E', marginLeft: 'auto' }} />
-                </div>
-              ))}
+              <div className="text-[10px] text-gray-400 leading-relaxed font-sans mt-3">
+                AI suggestion: Consider caching loop calculations to optimize execution times.
+              </div>
             </div>
           </div>
         </div>
       </motion.section>
 
-      {/* Features */}
-      <section id="features" style={{ padding: '80px 24px', maxWidth: 1100, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: 64 }}>
-          <span className="cf-badge cf-badge-secondary" style={{ marginBottom: 16, display: 'inline-flex' }}>Features</span>
-          <h2 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 16 }}>
-            Built for modern teams
-          </h2>
-          <p style={{ color: 'var(--text-2)', maxWidth: 480, margin: '0 auto', lineHeight: 1.7 }}>
-            Everything you need to ship software faster, without the overhead.
-          </p>
-        </div>
+      {/* Features Grid Section */}
+      <section id="features" className="py-20 border-t border-gray-850 bg-[#161B22]/30">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-black text-white mb-3">Designed for Collaboration & Learning</h2>
+            <p className="text-gray-400 text-sm max-w-lg mx-auto leading-relaxed">
+              No contest templates or scoreboard pressures. We focus on what developers do best: working together and building knowledge.
+            </p>
+          </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20 }}>
-          {features.map((f, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.06, duration: 0.4 }}
-              style={{
-                padding: 24,
-                background: 'var(--surface)',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius)',
-                transition: 'all var(--transition)',
-                cursor: 'default',
-              }}
-              whileHover={{ y: -3, boxShadow: `0 8px 32px rgba(0,0,0,0.3), 0 0 0 1px ${f.color}22` }}
-            >
-              <div style={{
-                width: 44, height: 44,
-                borderRadius: 12,
-                background: f.color + '18',
-                border: `1px solid ${f.color}30`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                marginBottom: 16,
-                color: f.color,
-              }}>
-                <f.icon size={20} />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {features.map((feat, idx) => (
+              <div 
+                key={idx} 
+                className="p-6 bg-[#161B22] border border-gray-800 rounded-2xl hover:border-gray-700 transition-colors shadow-sm flex flex-col"
+              >
+                <div className="w-10 h-10 rounded-xl bg-gray-800/40 flex items-center justify-center text-white mb-4 border border-gray-850">
+                  <feat.icon size={20} style={{ color: feat.color }} />
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2">{feat.title}</h3>
+                <p className="text-xs text-gray-400 leading-relaxed flex-1">{feat.desc}</p>
               </div>
-              <h3 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: 8, letterSpacing: '-0.01em' }}>{f.title}</h3>
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-2)', lineHeight: 1.6 }}>{f.desc}</p>
-            </motion.div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* Pricing */}
-      <section style={{ padding: '80px 24px 120px', maxWidth: 1100, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: 64 }}>
-          <span className="cf-badge cf-badge-success" style={{ marginBottom: 16, display: 'inline-flex' }}>Pricing</span>
-          <h2 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 16 }}>
-            Simple, transparent pricing
-          </h2>
-          <p style={{ color: 'var(--text-2)', maxWidth: 400, margin: '0 auto' }}>
-            Start for free, upgrade when you need more power.
-          </p>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20, maxWidth: 900, margin: '0 auto' }}>
-          {tiers.map((tier, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              style={{
-                padding: 28,
-                background: tier.popular ? 'var(--surface)' : 'var(--surface)',
-                border: `1px solid ${tier.popular ? 'var(--primary)' : 'var(--border)'}`,
-                borderRadius: 'var(--radius-lg)',
-                display: 'flex',
-                flexDirection: 'column',
-                position: 'relative',
-                boxShadow: tier.popular ? '0 0 0 1px rgba(59,130,246,0.3), 0 8px 32px rgba(59,130,246,0.15)' : 'none',
-              }}
-            >
-              {tier.popular && (
-                <div style={{
-                  position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)',
-                  background: 'var(--primary)',
-                  color: '#fff',
-                  fontSize: '0.7rem',
-                  fontWeight: 700,
-                  padding: '3px 12px',
-                  borderRadius: 99,
-                  letterSpacing: '0.05em',
-                  textTransform: 'uppercase',
-                }}>
-                  Most Popular
-                </div>
-              )}
-              <div style={{ marginBottom: 20 }}>
-                <h3 style={{ fontWeight: 700, fontSize: '1.125rem', marginBottom: 4 }}>{tier.name}</h3>
-                <p style={{ fontSize: '0.8125rem', color: 'var(--text-2)' }}>{tier.desc}</p>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 24 }}>
-                <span style={{ fontSize: '2.5rem', fontWeight: 800, letterSpacing: '-0.04em' }}>{tier.price}</span>
-                <span style={{ color: 'var(--text-2)', fontSize: '0.875rem' }}>{tier.period}</span>
-              </div>
-              <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 28, flex: 1 }}>
-                {tier.features.map((f, j) => (
-                  <li key={j} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.875rem', color: 'var(--text-2)' }}>
-                    <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'var(--success-muted)', border: '1px solid rgba(34,197,94,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <FiCheck size={10} color="var(--success)" />
-                    </div>
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <Link
-                to="/register"
-                className={`cf-btn ${tier.popular ? 'cf-btn-primary' : 'cf-btn-secondary'}`}
-                style={{ justifyContent: 'center', boxShadow: tier.popular ? '0 4px 16px rgba(59,130,246,0.3)' : 'none' }}
-              >
-                Get started
-              </Link>
-            </motion.div>
+      {/* Testimonials */}
+      <section className="py-20 max-w-5xl mx-auto px-6 text-center">
+        <h2 className="text-2xl font-black text-white mb-10">Used by Thousands of Learners</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto text-left">
+          {[
+            { quote: "CodeFusion was essential during our student developer bootcamp. Real-time coding with live cursor tags let us pairing-program headlessly.", author: "Marcus, Cornell CS student" },
+            { quote: "The AI Code review mode is unmatched. It scores my code, points out logical issues, and translates functions into simplified beginner explanation logs.", author: "Elena, Junior Dev" }
+          ].map((test, idx) => (
+            <div key={idx} className="p-6 bg-[#161B22] border border-gray-800 rounded-2xl relative shadow-md">
+              <FiSmile size={24} className="text-blue-500 mb-4" />
+              <p className="text-xs text-gray-300 italic leading-relaxed mb-4">"{test.quote}"</p>
+              <span className="text-[10px] font-bold text-gray-400 block">— {test.author}</span>
+            </div>
           ))}
         </div>
       </section>
 
       {/* Footer */}
-      <footer style={{ borderTop: '1px solid var(--border)', padding: '40px 24px' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 24, height: 24, background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <FiCode size={12} color="#fff" />
-            </div>
-            <span style={{ fontWeight: 700, fontSize: '0.875rem' }}>CodeFusion</span>
-          </div>
-          <p style={{ fontSize: '0.8125rem', color: 'var(--text-3)' }}>
-            © {new Date().getFullYear()} CodeFusion Inc. All rights reserved.
-          </p>
-          <div style={{ display: 'flex', gap: 20 }}>
-            {['Privacy', 'Terms', 'Docs', 'Status'].map(l => (
-              <a key={l} href="#" style={{ fontSize: '0.8125rem', color: 'var(--text-3)', textDecoration: 'none', transition: 'color var(--transition-fast)' }}
-                onMouseEnter={e => e.currentTarget.style.color = 'var(--text)'}
-                onMouseLeave={e => e.currentTarget.style.color = 'var(--text-3)'}
-              >{l}</a>
-            ))}
-          </div>
-        </div>
+      <footer className="py-12 border-t border-gray-850 bg-[#0D1117] text-center text-xs text-gray-500">
+        <p className="mb-2">© 2026 CodeFusion Platform. Built for developers and coding squads.</p>
+        <p>Start Code · Explore Groups · AI Mentor Review</p>
       </footer>
     </div>
   )
