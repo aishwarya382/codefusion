@@ -1,0 +1,21 @@
+# Root ignores
+node_modules/
+.env
+.env.local
+.DS_Store
+dist/
+build/
+.gemini/
+.agents/
+.system_generated/
+task.md
+implementation_plan.md
+walkthrough.md
+analysis_results.md
+database_connection_report.md
+final_codebase_audit_report.md
+final_connection_status_report.md
+final_database_resolution_report.md
+test_db.js
+diagnose_editor.js
+e2e_test.js
