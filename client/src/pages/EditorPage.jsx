@@ -1,17 +1,18 @@
-// client/src/pages/EditorPage.jsx (REDESIGNED FOR COLLABORATIVE CODING & AI REVIEW ONLY)
+// client/src/pages/EditorPage.jsx — PREMIUM v5.0 COLLABORATIVE WORKSPACE
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
 import Editor, { useMonaco } from '@monaco-editor/react'
-import { 
-  FiPlay, FiMessageSquare, FiCpu, FiUsers, FiSettings, 
-  FiMaximize, FiMinimize, FiChevronLeft, FiMenu, FiX,
+import {
+  FiPlay, FiMessageSquare, FiCpu, FiUsers, FiSettings,
+  FiMaximize, FiMinimize, FiChevronLeft, FiChevronRight, FiMenu, FiX,
   FiBookOpen, FiCheckCircle, FiInfo, FiCode, FiAlertCircle,
-  FiSend, FiShare2, FiHelpCircle, FiChevronRight, FiGrid, FiList,
+  FiSend, FiShare2, FiHelpCircle, FiGrid, FiList,
   FiTrendingUp, FiActivity, FiAward, FiClock, FiTrash2, FiDownload,
   FiCopy, FiFolder, FiStar, FiTerminal, FiBook, FiUpload, FiRefreshCw,
-  FiCheckSquare, FiUser
+  FiCheckSquare, FiUser, FiFile, FiChevronDown, FiGitBranch, FiEdit3,
+  FiZap, FiLock, FiFileText, FiHash, FiType
 } from 'react-icons/fi'
 import { toast } from 'react-hot-toast'
 import { io } from 'socket.io-client'
@@ -24,7 +25,9 @@ import {
   setTheme, setFontSize, toggleWordWrap, toggleMinimap
 } from '../store/slices/editorSlice'
 
-// ────── DETAILED STARTER TEMPLATES FOR ALL 17 LANGUAGES ──────
+// ────────────────────────────────────────────────────────────────
+// STARTER TEMPLATES — ALL 17 LANGUAGES
+// ────────────────────────────────────────────────────────────────
 const STARTER_TEMPLATES = {
   c: `#include <stdio.h>\n\nint main() {\n    // C Starter Template\n    printf("Hello CodeFusion!\\n");\n    return 0;\n}`,
   cpp: `#include <iostream>\nusing namespace std;\n\nint main() {\n    // C++ Starter Template\n    cout << "Hello CodeFusion!" << endl;\n    return 0;\n}`,
@@ -45,40 +48,219 @@ const STARTER_TEMPLATES = {
   bash: `#!/bin/bash\n# Bash Shell Script\necho "Current directory: $(pwd)"\necho "Welcome to CodeFusion Workspace!"`
 }
 
-// ────── AI COPILOT CHAT PANEL ──────
-const AIPanel = ({ language, getSelectedCode }) => {
+// Language display names
+const LANGUAGE_OPTIONS = [
+  { value: 'javascript', label: 'JavaScript' },
+  { value: 'python', label: 'Python' },
+  { value: 'cpp', label: 'C++' },
+  { value: 'c', label: 'C' },
+  { value: 'java', label: 'Java' },
+  { value: 'typescript', label: 'TypeScript' },
+  { value: 'csharp', label: 'C#' },
+  { value: 'go', label: 'Go' },
+  { value: 'rust', label: 'Rust' },
+  { value: 'kotlin', label: 'Kotlin' },
+  { value: 'swift', label: 'Swift' },
+  { value: 'php', label: 'PHP' },
+  { value: 'ruby', label: 'Ruby' },
+  { value: 'html', label: 'HTML' },
+  { value: 'css', label: 'CSS' },
+  { value: 'sql', label: 'SQL' },
+  { value: 'bash', label: 'Bash' }
+]
+
+// File extension helper
+const getFileExtension = (lang) => {
+  const map = { python: 'py', javascript: 'js', typescript: 'ts', cpp: 'cpp', c: 'c', java: 'java', csharp: 'cs', go: 'go', rust: 'rs', kotlin: 'kt', swift: 'swift', php: 'php', ruby: 'rb', html: 'html', css: 'css', sql: 'sql', bash: 'sh' }
+  return map[lang] || 'txt'
+}
+
+// ────────────────────────────────────────────────────────────────
+// FILE EXPLORER COMPONENT
+// ────────────────────────────────────────────────────────────────
+const MOCK_FILE_TREE = [
+  { id: 'src', name: 'src', type: 'folder', children: [
+    { id: 'main', name: 'main.js', type: 'file', icon: 'js' },
+    { id: 'utils', name: 'utils.js', type: 'file', icon: 'js' },
+    { id: 'style', name: 'style.css', type: 'file', icon: 'css' },
+  ]},
+  { id: 'index', name: 'index.html', type: 'file', icon: 'html' },
+]
+
+const FileExplorer = ({ activeFile, onFileSelect }) => {
+  const [expandedFolders, setExpandedFolders] = useState({ src: true })
+
+  const toggleFolder = (id) => {
+    setExpandedFolders(prev => ({ ...prev, [id]: !prev[id] }))
+  }
+
+  const fileIconColor = (icon) => {
+    const colors = { js: 'text-yellow-400', ts: 'text-blue-400', css: 'text-blue-300', html: 'text-orange-400', py: 'text-green-400' }
+    return colors[icon] || 'text-gray-400'
+  }
+
+  const renderItem = (item, depth = 0) => {
+    if (item.type === 'folder') {
+      return (
+        <div key={item.id}>
+          <button
+            onClick={() => toggleFolder(item.id)}
+            className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-gray-300 hover:bg-[#2d2d2d] transition-colors rounded-md group"
+            style={{ paddingLeft: `${12 + depth * 14}px` }}
+          >
+            <FiChevronRight size={11} className={`transition-transform ${expandedFolders[item.id] ? 'rotate-90' : ''} text-gray-500`} />
+            <FiFolder size={13} className="text-blue-400" />
+            <span className="font-medium">{item.name}</span>
+          </button>
+          <AnimatePresence>
+            {expandedFolders[item.id] && item.children && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="overflow-hidden"
+              >
+                {item.children.map(child => renderItem(child, depth + 1))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )
+    }
+
+    return (
+      <button
+        key={item.id}
+        onClick={() => onFileSelect(item.id)}
+        className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs transition-colors rounded-md ${
+          activeFile === item.id
+            ? 'bg-blue-600/15 text-blue-400 border-l-2 border-blue-500'
+            : 'text-gray-400 hover:bg-[#2d2d2d] hover:text-gray-200'
+        }`}
+        style={{ paddingLeft: `${12 + depth * 14}px` }}
+      >
+        <FiFile size={12} className={fileIconColor(item.icon)} />
+        <span className="font-medium truncate">{item.name}</span>
+      </button>
+    )
+  }
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="px-4 py-3 flex items-center justify-between border-b border-gray-800/60">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Explorer</span>
+        <div className="flex gap-1">
+          <button className="p-1 hover:bg-[#2d2d2d] rounded text-gray-500 hover:text-gray-300 transition-colors" title="New File">
+            <FiFile size={12} />
+          </button>
+          <button className="p-1 hover:bg-[#2d2d2d] rounded text-gray-500 hover:text-gray-300 transition-colors" title="New Folder">
+            <FiFolder size={12} />
+          </button>
+        </div>
+      </div>
+      <div className="flex-1 overflow-y-auto py-1.5 custom-scrollbar">
+        {MOCK_FILE_TREE.map(item => renderItem(item))}
+      </div>
+    </div>
+  )
+}
+
+// ────────────────────────────────────────────────────────────────
+// AI MENTOR PANEL — 13 UTILITIES + CHAT
+// ────────────────────────────────────────────────────────────────
+const AI_ACTIONS = [
+  { id: 'explain',      label: 'Explain Code',    icon: FiBookOpen,     color: 'text-blue-400' },
+  { id: 'fix',          label: 'Fix Errors',      icon: FiAlertCircle,  color: 'text-red-400' },
+  { id: 'optimize',     label: 'Optimize',        icon: FiTrendingUp,   color: 'text-green-400' },
+  { id: 'tests',        label: 'Gen Tests',       icon: FiCheckSquare,  color: 'text-purple-400' },
+  { id: 'comments',     label: 'Gen Comments',    icon: FiHash,         color: 'text-yellow-400' },
+  { id: 'readme',       label: 'Gen README',      icon: FiFileText,     color: 'text-cyan-400' },
+  { id: 'convert',      label: 'Convert Lang',    icon: FiRefreshCw,    color: 'text-orange-400' },
+  { id: 'debug',        label: 'Debug',           icon: FiZap,          color: 'text-amber-400' },
+  { id: 'naming',       label: 'Improve Names',   icon: FiType,         color: 'text-indigo-400' },
+  { id: 'security',     label: 'Security Review', icon: FiLock,         color: 'text-rose-400' },
+  { id: 'accessibility',label: 'Accessibility',   icon: FiUsers,        color: 'text-teal-400' },
+  { id: 'commit',       label: 'Commit Message',  icon: FiGitBranch,    color: 'text-violet-400' },
+  { id: 'documentation',label: 'Documentation',   icon: FiBook,         color: 'text-emerald-400' },
+]
+
+const AIMentorPanel = ({ language, getSelectedCode }) => {
   const [messages, setMessages] = useState([
-    { role: 'assistant', content: 'Hello! I am CodeFusion AI. Select a block of code and ask me a question, or use the quick actions below to refactor, explain, or optimize.' }
+    { role: 'assistant', content: 'Hello! I\'m CodeFusion AI Mentor. Select code and use quick actions below, or chat with me directly. I support 13 specialized utilities!' }
   ])
   const [prompt, setPrompt] = useState('')
   const [loading, setLoading] = useState(false)
+  const [actionsExpanded, setActionsExpanded] = useState(true)
   const aiEndRef = useRef(null)
 
   useEffect(() => {
     aiEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const handleAction = async (actionType) => {
+  const handleAction = async (actionId) => {
     const code = getSelectedCode()
+    if (!code || !code.trim()) {
+      toast.error('Select or write some code first')
+      return
+    }
     setLoading(true)
-    setMessages(prev => [...prev, { role: 'user', content: `Request: ${actionType.toUpperCase()}` }])
+    const actionLabel = AI_ACTIONS.find(a => a.id === actionId)?.label || actionId
+    setMessages(prev => [...prev, { role: 'user', content: `🔧 Action: ${actionLabel}` }])
+
     try {
       let res
-      if (actionType === 'explain') {
-        res = await aiService.explain({ code, language })
-      } else if (actionType === 'fix') {
-        res = await aiService.fix({ code, language })
-      } else if (actionType === 'optimize') {
-        res = await aiService.optimize({ code, language })
-      } else if (actionType === 'tests') {
-        res = await aiService.generateTests({ code, language })
+      switch (actionId) {
+        case 'explain':
+          res = await aiService.explain({ code, language })
+          break
+        case 'fix':
+          res = await aiService.fix({ code, language })
+          break
+        case 'optimize':
+          res = await aiService.optimize({ code, language })
+          break
+        case 'tests':
+          res = await aiService.generateTests({ code, language })
+          break
+        case 'comments':
+          res = await aiService.chat({ message: 'Add detailed comments to this code. Return only the commented code.', code, language, history: [] })
+          break
+        case 'readme':
+          res = await aiService.chat({ message: 'Generate a professional README.md for this code project. Include description, usage, and examples.', code, language, history: [] })
+          break
+        case 'convert':
+          res = await aiService.chat({ message: 'Convert this code to Python (or the next logical language). Show the converted code with explanations.', code, language, history: [] })
+          break
+        case 'debug':
+          res = await aiService.chat({ message: 'Debug this code. Identify all bugs, explain each issue, and provide the fixed version.', code, language, history: [] })
+          break
+        case 'naming':
+          res = await aiService.chat({ message: 'Improve all variable, function, and class names in this code for better readability. Return the improved code.', code, language, history: [] })
+          break
+        case 'security':
+          res = await aiService.chat({ message: 'Perform a security review of this code. Identify vulnerabilities, injection risks, and suggest fixes.', code, language, history: [] })
+          break
+        case 'accessibility':
+          res = await aiService.chat({ message: 'Review this code for accessibility best practices. Suggest improvements for a11y compliance.', code, language, history: [] })
+          break
+        case 'commit':
+          res = await aiService.chat({ message: 'Generate a conventional commit message for the changes in this code. Follow the format: type(scope): description.', code, language, history: [] })
+          break
+        case 'documentation':
+          res = await aiService.document({ code, language })
+          break
+        default:
+          res = await aiService.chat({ message: `Perform action: ${actionId}`, code, language, history: [] })
       }
 
       if (res.success) {
         setMessages(prev => [...prev, { role: 'assistant', content: res.response }])
+      } else {
+        setMessages(prev => [...prev, { role: 'assistant', content: '⚠️ AI could not process this request. Please try again.' }])
       }
     } catch (err) {
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, I encountered an error executing that request.' }])
+      setMessages(prev => [...prev, { role: 'assistant', content: '❌ An error occurred while processing your request.' }])
     } finally {
       setLoading(false)
     }
@@ -103,59 +285,102 @@ const AIPanel = ({ language, getSelectedCode }) => {
         setMessages(prev => [...prev, { role: 'assistant', content: res.response }])
       }
     } catch (err) {
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, I encountered an error.' }])
+      setMessages(prev => [...prev, { role: 'assistant', content: '❌ Sorry, I encountered an error.' }])
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="flex flex-col h-full bg-[#1e1e1e] text-white overflow-hidden rounded-xl">
-      <div className="p-3 border-b border-gray-800 bg-[#252526] flex gap-1.5 flex-wrap shrink-0">
-        <button onClick={() => handleAction('explain')} className="px-2.5 py-1 text-[10px] rounded border border-gray-700 bg-[#1e1e1e] hover:bg-gray-800 text-gray-300 font-medium">Explain</button>
-        <button onClick={() => handleAction('fix')} className="px-2.5 py-1 text-[10px] rounded border border-gray-700 bg-[#1e1e1e] hover:bg-gray-800 text-gray-300 font-medium">Fix Bugs</button>
-        <button onClick={() => handleAction('optimize')} className="px-2.5 py-1 text-[10px] rounded border border-gray-700 bg-[#1e1e1e] hover:bg-gray-800 text-gray-300 font-medium">Optimize</button>
-        <button onClick={() => handleAction('tests')} className="px-2.5 py-1 text-[10px] rounded border border-gray-700 bg-[#1e1e1e] hover:bg-gray-800 text-gray-300 font-medium">Gen Tests</button>
+    <div className="flex flex-col h-full bg-[#161B22] text-white overflow-hidden">
+      {/* Action Buttons Grid */}
+      <div className="border-b border-gray-800 shrink-0">
+        <button
+          onClick={() => setActionsExpanded(!actionsExpanded)}
+          className="w-full px-4 py-2.5 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-gray-400 hover:text-gray-200 hover:bg-[#1e1e1e]/50 transition-colors"
+        >
+          <span className="flex items-center gap-1.5">
+            <FiZap size={11} className="text-blue-400" />
+            AI Utilities ({AI_ACTIONS.length})
+          </span>
+          <FiChevronDown size={12} className={`transition-transform ${actionsExpanded ? 'rotate-180' : ''}`} />
+        </button>
+        <AnimatePresence>
+          {actionsExpanded && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              <div className="grid grid-cols-3 gap-1.5 px-3 pb-3">
+                {AI_ACTIONS.map(action => (
+                  <button
+                    key={action.id}
+                    onClick={() => handleAction(action.id)}
+                    disabled={loading}
+                    className="flex flex-col items-center gap-1 px-1.5 py-2 rounded-lg border border-gray-800 bg-[#0D1117] hover:bg-[#1e1e1e] hover:border-gray-600 transition-all text-center group disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <action.icon size={14} className={`${action.color} group-hover:scale-110 transition-transform`} />
+                    <span className="text-[9px] font-semibold text-gray-400 group-hover:text-gray-200 leading-tight">{action.label}</span>
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4 custom-scrollbar">
+      {/* Chat Messages */}
+      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 custom-scrollbar">
         {messages.map((m, i) => (
           <div key={i} className={`flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
-            <span className="text-[10px] text-gray-400 mb-1 font-medium">{m.role === 'user' ? 'You' : 'AI Copilot'}</span>
-            <div className={`p-2.5 rounded-lg text-sm max-w-[90%] break-words whitespace-pre-wrap font-sans ${m.role === 'user' ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-[#2d2d2d] text-white rounded-tl-none border border-gray-700'}`}>
+            <span className="text-[9px] text-gray-500 mb-1 font-semibold uppercase tracking-wide">
+              {m.role === 'user' ? 'You' : '✨ AI Mentor'}
+            </span>
+            <div className={`p-3 rounded-xl text-xs max-w-[92%] break-words whitespace-pre-wrap leading-relaxed ${
+              m.role === 'user'
+                ? 'bg-blue-600/90 text-white rounded-tr-none'
+                : 'bg-[#0D1117] text-gray-300 rounded-tl-none border border-gray-800'
+            }`}>
               {m.content}
             </div>
           </div>
         ))}
         {loading && (
           <div className="flex flex-col items-start">
-            <span className="text-[10px] text-gray-400 mb-1 font-medium">AI Copilot</span>
-            <div className="p-2.5 rounded-lg text-sm bg-[#2d2d2d] text-gray-400 rounded-tl-none border border-gray-700 flex items-center gap-2">
-              <span className="animate-spin text-blue-500">⟳</span> Copilot is thinking...
+            <span className="text-[9px] text-gray-500 mb-1 font-semibold uppercase tracking-wide">✨ AI Mentor</span>
+            <div className="p-3 rounded-xl text-xs bg-[#0D1117] text-gray-400 rounded-tl-none border border-gray-800 flex items-center gap-2">
+              <span className="inline-block w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+              Analyzing your code...
             </div>
           </div>
         )}
         <div ref={aiEndRef} />
       </div>
 
-      <form onSubmit={handleSend} className="p-3 border-t border-gray-800 bg-[#252526] flex gap-2 shrink-0">
-        <input 
-          type="text" 
+      {/* Chat Input */}
+      <form onSubmit={handleSend} className="p-3 border-t border-gray-800 bg-[#0D1117] flex gap-2 shrink-0">
+        <input
+          type="text"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Ask AI anything..."
-          className="flex-1 px-3 py-1.5 text-sm bg-[#1e1e1e] border border-gray-700 rounded focus:outline-none focus:border-blue-500 text-white"
+          placeholder="Ask AI anything about your code..."
+          className="flex-1 px-3 py-2 text-xs bg-[#161B22] border border-gray-800 rounded-lg focus:outline-none focus:border-blue-500 text-white placeholder-gray-600"
           disabled={loading}
         />
-        <button type="submit" className="p-1.5 bg-blue-600 rounded hover:bg-blue-500 transition-colors flex items-center justify-center" disabled={loading}>
-          <FiSend size={14} />
+        <button type="submit" className="px-3 py-2 bg-blue-600 rounded-lg hover:bg-blue-500 transition-colors flex items-center justify-center disabled:opacity-50" disabled={loading}>
+          <FiSend size={13} />
         </button>
       </form>
     </div>
   )
 }
 
-// ────── COMPILER / TERMINAL PANEL ──────
+// ────────────────────────────────────────────────────────────────
+// EXECUTION / TERMINAL PANEL
+// ────────────────────────────────────────────────────────────────
 const ExecutionPanel = ({ output, isRunning, onRunCode, onTestCases }) => {
   const [customInput, setCustomInput] = useState('')
   const [execTime, setExecTime] = useState(null)
@@ -169,59 +394,64 @@ const ExecutionPanel = ({ output, isRunning, onRunCode, onTestCases }) => {
   }, [output, isRunning])
 
   return (
-    <div className="flex flex-col h-full bg-[#1e1e1e] text-white p-4 overflow-y-auto custom-scrollbar rounded-xl">
+    <div className="flex flex-col h-full bg-[#161B22] text-white p-4 overflow-y-auto custom-scrollbar">
+      {/* Run / Test Buttons */}
       <div className="flex gap-2 mb-4 shrink-0">
-        <button 
-          onClick={() => onRunCode(customInput)} 
+        <button
+          onClick={() => onRunCode(customInput)}
           disabled={isRunning}
-          className="flex-1 py-2 bg-green-600 hover:bg-green-500 rounded text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50"
+          className="flex-1 py-2.5 bg-green-600 hover:bg-green-500 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-lg shadow-green-600/20"
         >
-          <FiPlay size={13} /> Run Code
+          <FiPlay size={14} /> Run Code
         </button>
-        <button 
+        <button
           onClick={onTestCases}
           disabled={isRunning}
-          className="flex-1 py-2 bg-[#2d2d2d] hover:bg-gray-700 rounded text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors border border-gray-700"
+          className="flex-1 py-2.5 bg-[#0D1117] hover:bg-[#1e1e1e] rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-colors border border-gray-800"
         >
-          <FiCheckSquare size={13} /> Test Suite
+          <FiCheckSquare size={14} /> Test Suite
         </button>
       </div>
 
+      {/* Custom Input */}
       <div className="mb-4">
-        <label className="block text-xs font-semibold text-gray-400 mb-1.5">Custom Test Input</label>
+        <label className="block text-[10px] font-bold text-gray-400 mb-1.5 uppercase tracking-wider">Custom Test Input (stdin)</label>
         <textarea
           value={customInput}
           onChange={e => setCustomInput(e.target.value)}
           placeholder="Enter custom stdin input..."
           rows={3}
-          className="w-full p-2.5 bg-[#1e1e1e] border border-gray-700 rounded text-xs text-white font-mono outline-none focus:border-blue-500"
+          className="w-full p-3 bg-[#0D1117] border border-gray-800 rounded-lg text-xs text-white font-mono outline-none focus:border-blue-500 resize-none"
         />
       </div>
 
+      {/* Console Output */}
       <div className="flex flex-col flex-1 min-h-[150px]">
-        <span className="block text-xs font-semibold text-gray-400 mb-1.5">Console Output</span>
-        <div className="flex-1 p-3 bg-[#0d1117] rounded border border-gray-800 font-mono text-xs overflow-y-auto whitespace-pre-wrap text-gray-300">
+        <span className="block text-[10px] font-bold text-gray-400 mb-1.5 uppercase tracking-wider">Console Output</span>
+        <div className="flex-1 p-3 bg-[#0D1117] rounded-lg border border-gray-800 font-mono text-xs overflow-y-auto whitespace-pre-wrap text-gray-300">
           {isRunning ? (
             <div className="flex items-center gap-2 text-blue-400">
-              <span className="animate-spin">⟳</span> Compiling and executing code...
+              <span className="inline-block w-3.5 h-3.5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+              Compiling and executing code...
             </div>
           ) : output ? (
             output
           ) : (
-            <span className="text-gray-500">Run code to see compile and execution outputs.</span>
+            <span className="text-gray-600 italic">Run code to see output here.</span>
           )}
         </div>
       </div>
 
+      {/* Execution Stats */}
       {output && !isRunning && (
-        <div className="mt-4 p-3 bg-[#2d2d2d] rounded border border-gray-700 grid grid-cols-2 gap-4 text-xs">
+        <div className="mt-4 p-3 bg-[#0D1117] rounded-lg border border-gray-800 grid grid-cols-2 gap-4 text-xs">
           <div>
-            <span className="text-gray-400 block mb-0.5">Execution Time</span>
-            <span className="font-semibold text-green-400">{execTime} ms</span>
+            <span className="text-gray-500 block mb-0.5 text-[10px]">Execution Time</span>
+            <span className="font-bold text-green-400">{execTime} ms</span>
           </div>
           <div>
-            <span className="text-gray-400 block mb-0.5">Memory Consumption</span>
-            <span className="font-semibold text-green-400">{execMemory} MB</span>
+            <span className="text-gray-500 block mb-0.5 text-[10px]">Memory Used</span>
+            <span className="font-bold text-green-400">{execMemory} MB</span>
           </div>
         </div>
       )}
@@ -229,7 +459,9 @@ const ExecutionPanel = ({ output, isRunning, onRunCode, onTestCases }) => {
   )
 }
 
-// ────── TEAM CHAT PANEL ──────
+// ────────────────────────────────────────────────────────────────
+// TEAM CHAT PANEL
+// ────────────────────────────────────────────────────────────────
 const TeamChatPanel = ({ projectId, user, messages, onSendMessage }) => {
   const [inputText, setInputText] = useState('')
   const chatEndRef = useRef(null)
@@ -246,10 +478,13 @@ const TeamChatPanel = ({ projectId, user, messages, onSendMessage }) => {
   }
 
   return (
-    <div className="flex flex-col h-full bg-[#1e1e1e] text-white rounded-xl">
+    <div className="flex flex-col h-full bg-[#161B22] text-white">
       <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 custom-scrollbar">
         {messages.length === 0 ? (
-          <div className="text-center text-gray-400 text-xs mt-8">No messages yet. Start the conversation!</div>
+          <div className="flex flex-col items-center justify-center text-center text-gray-500 mt-12 gap-2">
+            <FiMessageSquare size={28} className="text-gray-700" />
+            <span className="text-xs">No messages yet. Start the conversation!</span>
+          </div>
         ) : (
           messages.map((msg, index) => {
             const isMe = msg.sender?._id === user?._id
@@ -257,23 +492,21 @@ const TeamChatPanel = ({ projectId, user, messages, onSendMessage }) => {
               <div key={index} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
                 <div className="flex items-center gap-1.5 mb-1">
                   {!isMe && (
-                    <img 
-                      src={msg.sender?.avatar || `https://ui-avatars.com/api/?name=${msg.sender?.username || 'U'}`} 
-                      alt="" 
+                    <img
+                      src={msg.sender?.avatar || `https://ui-avatars.com/api/?name=${msg.sender?.username || 'U'}`}
+                      alt=""
                       className="w-4 h-4 rounded-full"
                     />
                   )}
-                  <span className="text-[10px] text-gray-400 font-semibold">
+                  <span className="text-[9px] text-gray-500 font-semibold">
                     {isMe ? 'You' : msg.sender?.username}
                   </span>
                 </div>
-                <div 
-                  className={`p-2.5 rounded-xl text-sm max-w-[85%] break-words ${
-                    isMe 
-                      ? 'bg-blue-600 text-white rounded-tr-none' 
-                      : 'bg-[#2d2d2d] text-white rounded-tl-none border border-gray-700/60'
-                  }`}
-                >
+                <div className={`p-3 rounded-xl text-xs max-w-[85%] break-words leading-relaxed ${
+                  isMe
+                    ? 'bg-blue-600/90 text-white rounded-tr-none'
+                    : 'bg-[#0D1117] text-gray-300 rounded-tl-none border border-gray-800'
+                }`}>
                   {msg.content}
                 </div>
               </div>
@@ -283,23 +516,25 @@ const TeamChatPanel = ({ projectId, user, messages, onSendMessage }) => {
         <div ref={chatEndRef} />
       </div>
 
-      <form onSubmit={handleSend} className="p-3 border-t border-gray-800 bg-[#252526] flex gap-2">
-        <input 
-          type="text" 
+      <form onSubmit={handleSend} className="p-3 border-t border-gray-800 bg-[#0D1117] flex gap-2 shrink-0">
+        <input
+          type="text"
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
-          placeholder="Type team chat message..."
-          className="flex-1 px-3.5 py-2 text-sm bg-[#1e1e1e] border border-gray-700 rounded-xl focus:outline-none focus:border-blue-500 text-white"
+          placeholder="Type team message..."
+          className="flex-1 px-3 py-2 text-xs bg-[#161B22] border border-gray-800 rounded-lg focus:outline-none focus:border-blue-500 text-white placeholder-gray-600"
         />
-        <button type="submit" className="p-2 bg-blue-600 rounded-xl hover:bg-blue-500 transition-colors flex items-center justify-center">
-          <FiSend size={14} />
+        <button type="submit" className="px-3 py-2 bg-blue-600 rounded-lg hover:bg-blue-500 transition-colors flex items-center justify-center">
+          <FiSend size={13} />
         </button>
       </form>
     </div>
   )
 }
 
-// ────── PRESENCE AVATAR BAR ──────
+// ────────────────────────────────────────────────────────────────
+// PRESENCE AVATARS
+// ────────────────────────────────────────────────────────────────
 const PresenceBar = ({ collaborators }) => (
   <div className="flex items-center -space-x-1.5 overflow-hidden">
     {collaborators?.slice(0, 4).map((c, i) => (
@@ -308,58 +543,32 @@ const PresenceBar = ({ collaborators }) => (
         src={c.avatar || `https://ui-avatars.com/api/?name=${c.username || 'U'}&background=6366f1&color=fff&bold=true`}
         alt={c.username}
         title={c.username}
-        className="inline-block h-6 w-6 rounded-full ring-2 ring-[#1e1e1e] object-cover"
+        className="inline-block h-7 w-7 rounded-full ring-2 ring-[#0D1117] object-cover"
       />
     ))}
     {collaborators?.length > 4 && (
-      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-700 text-[10px] font-bold text-white ring-2 ring-[#1e1e1e]">
+      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-700 text-[10px] font-bold text-white ring-2 ring-[#0D1117]">
         +{collaborators.length - 4}
       </div>
     )}
   </div>
 )
 
-// ────── STUDENT PROGRESS DASHBOARD COMPONENT ──────
-const DashboardHeader = ({ isVisible, onClose }) => {
-  if (!isVisible) return null;
-  return (
-    <div className="mb-6 p-6 bg-[#1c1c1c]/90 backdrop-blur-md border border-gray-800 rounded-2xl shadow-xl text-white">
-      <div className="flex justify-between items-center mb-4">
-        <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">Student Workspace Dashboard</span>
-        <button onClick={onClose} className="text-gray-400 hover:text-white p-1 hover:bg-gray-800 rounded-lg transition-colors">
-          <FiX size={16} />
-        </button>
-      </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        {[
-          { label: 'Streak', value: '🔥 7 Days', color: 'text-orange-400' },
-          { label: 'Total XP', value: '🏆 1,450 XP', color: 'text-yellow-400' },
-          { label: 'Global Rank', value: '⚡ #2,410', color: 'text-blue-400' },
-          { label: 'Contest Rating', value: '⭐ 1,620', color: 'text-purple-400' },
-          { label: 'Collaborators', value: '👥 Active Session', color: 'text-green-400' },
-          { label: 'Acceptance Rate', value: '📈 65.4%', color: 'text-teal-400' }
-        ].map((card, i) => (
-          <div key={i} className="p-4 bg-[#2d2d2d] rounded-xl border border-gray-700/60 flex flex-col justify-center shadow-md">
-            <span className="text-[10px] text-gray-400 uppercase tracking-wider font-bold mb-1">{card.label}</span>
-            <span className={`text-lg font-black ${card.color}`}>{card.value}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
+// ────────────────────────────────────────────────────────────────
+// MAIN EDITOR PAGE
+// ────────────────────────────────────────────────────────────────
 export default function EditorPage() {
   const { projectId } = useParams()
   const navigate = useNavigate()
   const dispatch = useDispatch()
   const monaco = useMonaco()
-  
+
   const socketRef = useRef(null)
   const editorRef = useRef(null)
   const decorationsRef = useRef({})
   const monacoRef = useRef(null)
   const isRemoteChange = useRef(false)
+  const isInitialMount = useRef(true)
 
   const user = useSelector(selectUser)
   const token = useSelector(selectToken)
@@ -367,24 +576,22 @@ export default function EditorPage() {
 
   const [project, setProject] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState('ai') // ai, execution, chat
+  const [activeTab, setActiveTab] = useState('ai')
   const [messages, setMessages] = useState([])
-  const isInitialMount = useRef(true)
-
-  // Left Panel Tabs
-  const [editorLeftTab, setEditorLeftTab] = useState('review') // review, explanation, complexity
-  const [dashboardVisible, setDashboardVisible] = useState(true)
-
-  // Editor styling states
+  const [activeFile, setActiveFile] = useState('main')
+  const [fileExplorerOpen, setFileExplorerOpen] = useState(true)
+  const [reviewOpen, setReviewOpen] = useState(true)
   const [fontSizeSelected, setFontSizeSelected] = useState(editorState.fontSize || 14)
   const [isLightMode, setIsLightMode] = useState(false)
-  const isWebLanguage = ['html', 'css', 'javascript'].includes(editorState.language?.toLowerCase())
   const [livePreviewCode, setLivePreviewCode] = useState('')
+
+  const isWebLanguage = ['html', 'css', 'javascript'].includes(editorState.language?.toLowerCase())
 
   useEffect(() => {
     monacoRef.current = monaco
   }, [monaco])
 
+  // ── Fetch project + messages + init socket ──
   useEffect(() => {
     fetchProject()
     fetchMessages()
@@ -397,6 +604,7 @@ export default function EditorPage() {
     }
   }, [projectId])
 
+  // ── Auto-save with debounce ──
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false
@@ -422,6 +630,7 @@ export default function EditorPage() {
     return () => clearTimeout(delayDebounceFn)
   }, [editorState.code])
 
+  // ── Live preview for web languages ──
   useEffect(() => {
     if (isWebLanguage) {
       setLivePreviewCode(editorState.code)
@@ -453,6 +662,7 @@ export default function EditorPage() {
     }
   }
 
+  // ── Socket.IO ──
   const initSocket = () => {
     const socketUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'
     socketRef.current = io(socketUrl, { auth: { token } })
@@ -532,6 +742,7 @@ export default function EditorPage() {
     })
   }
 
+  // ── Editor Handlers ──
   const handleEditorChange = (value) => {
     isRemoteChange.current = false
     dispatch(setCode(value))
@@ -581,20 +792,20 @@ export default function EditorPage() {
       if (res.success) {
         dispatch(setOutput(res.stderr ? `Error:\n${res.stderr}\n\nOutput:\n${res.output}` : res.output))
       }
-    } catch (err) { 
-      dispatch(setOutput('Execution failed.')) 
-    } finally { 
-      dispatch(setIsRunning(false)) 
+    } catch (err) {
+      dispatch(setOutput('Execution failed.'))
+    } finally {
+      dispatch(setIsRunning(false))
     }
   }
 
   const handleRunTestCases = async () => {
     dispatch(setIsRunning(true))
     try {
-      const res = await executionService.run({ 
-        code: editorState.code, 
-        language: editorState.language, 
-        stdin: 'test_input' 
+      const res = await executionService.run({
+        code: editorState.code,
+        language: editorState.language,
+        stdin: 'test_input'
       })
       if (res.success) {
         dispatch(setOutput(`Running Test Suite...\nActual Output:\n${res.output?.trim()}\n\nStatus: ✅ PASSED`))
@@ -612,21 +823,22 @@ export default function EditorPage() {
   }
 
   const handleResetCode = () => {
-    if (window.confirm('Reset code to default placeholder? This will discard unsaved changes.')) {
+    if (window.confirm('Reset code to default template? This will discard unsaved changes.')) {
       const template = STARTER_TEMPLATES[editorState.language] || '// Write your solution here...\n'
       dispatch(setCode(template))
-      toast.success('Editor reset to language template successfully')
+      toast.success('Editor reset to language template')
     }
   }
 
-  if (loading) {
-    return (
-      <div className="h-screen bg-[#121212] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    )
-  }
+  // ── File Tab handling ──
+  const fileTabs = [
+    { id: 'main', name: `main.${getFileExtension(editorState.language)}` },
+    { id: 'utils', name: `utils.${getFileExtension(editorState.language)}` },
+    { id: 'style', name: 'style.css' },
+    { id: 'index', name: 'index.html' }
+  ]
 
+  // ── Live Preview srcdoc ──
   const iframeSrcDoc = `
     <!DOCTYPE html>
     <html lang="en">
@@ -642,59 +854,73 @@ export default function EditorPage() {
     </html>
   `
 
+  // ── Loading Screen ──
+  if (loading) {
+    return (
+      <div className="h-screen bg-[#0D1117] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <span className="text-sm text-gray-400 font-medium">Loading workspace...</span>
+        </div>
+      </div>
+    )
+  }
+
+  // ── RIGHT PANEL TAB CONFIG ──
+  const rightPanelTabs = [
+    { id: 'ai', label: 'AI Mentor', icon: FiCpu },
+    { id: 'execution', label: 'Terminal', icon: FiTerminal },
+    { id: 'chat', label: 'Chat', icon: FiMessageSquare }
+  ]
+
   return (
-    <div className={`h-screen flex flex-col bg-[#121212] text-white overflow-hidden ${editorState.isFullscreen ? 'fixed inset-0 z-50' : ''}`}>
-      
-      {/* 1. Header (72px) with justify-between flex layout */}
-      <header className="h-[72px] bg-[#1c1c1c]/80 backdrop-blur-md border-b border-gray-800/80 flex items-center justify-between px-8 shrink-0 shadow-lg z-10 select-none">
-        
-        {/* Left Header Group */}
+    <div className={`h-screen flex flex-col bg-[#0D1117] text-white overflow-hidden ${editorState.isFullscreen ? 'fixed inset-0 z-50' : ''}`}>
+
+      {/* ═══════════════════════════════════════════════════════════
+          HEADER (72px)
+         ═══════════════════════════════════════════════════════════ */}
+      <header className="h-[72px] bg-[#161B22]/95 backdrop-blur-xl border-b border-gray-800 flex items-center justify-between px-6 shrink-0 shadow-xl z-20 select-none">
+
+        {/* Left: Logo + Project */}
         <div className="flex items-center gap-4">
-          <Link to="/dashboard" className="flex items-center gap-2 text-decoration-none">
-            <div className="w-8 h-8 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-xl flex items-center justify-center shadow-md shadow-blue-500/20">
-              <FiCode size={16} color="#fff" />
+          <Link to="/dashboard" className="flex items-center gap-2.5 no-underline group">
+            <div className="w-8 h-8 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/25 group-hover:shadow-blue-500/40 transition-shadow">
+              <FiCode size={15} color="#fff" />
             </div>
-            <span className="font-extrabold text-base tracking-tight text-white">CodeFusion</span>
+            <span className="font-extrabold text-sm tracking-tight text-white group-hover:text-blue-400 transition-colors">CodeFusion</span>
           </Link>
-          <div className="h-5 w-[1px] bg-gray-800" />
+          <div className="h-5 w-px bg-gray-800" />
           <div className="flex items-center gap-3">
-            <h2 className="font-bold text-sm text-gray-200">{project?.title || 'Workspace'}</h2>
-            <span className="px-2 py-0.5 rounded-full bg-gray-800/85 text-[10px] text-gray-400 border border-gray-700/80 uppercase tracking-wide">
+            <h2 className="font-bold text-sm text-gray-200 truncate max-w-[160px]">{project?.title || 'Workspace'}</h2>
+            <span className="px-2 py-0.5 rounded-full bg-[#0D1117] text-[10px] text-gray-400 border border-gray-800 uppercase tracking-wider font-bold">
               {editorState.language}
             </span>
           </div>
         </div>
 
-        {/* Center Header Group */}
-        <div className="flex items-center gap-4 text-xs text-gray-300">
-          <div className="flex items-center gap-2">
-            <span>Language</span>
+        {/* Center: Controls */}
+        <div className="flex items-center gap-3 text-xs text-gray-300">
+          {/* Language Select */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-gray-500 text-[10px] font-semibold uppercase">Lang</span>
             <select
               value={editorState.language}
               onChange={e => {
                 const lang = e.target.value
                 dispatch(setLanguage(lang))
-                const template = STARTER_TEMPLATES[lang] || ''
-                dispatch(setCode(template))
+                dispatch(setCode(STARTER_TEMPLATES[lang] || ''))
               }}
-              className="bg-[#2d2d2d] border border-gray-700 rounded-xl px-3 py-1.5 text-white outline-none cursor-pointer font-semibold"
+              className="bg-[#0D1117] border border-gray-800 rounded-lg px-2.5 py-1.5 text-white text-xs outline-none cursor-pointer font-semibold hover:border-gray-600 transition-colors"
             >
-              <option value="javascript">JavaScript</option>
-              <option value="python">Python</option>
-              <option value="cpp">C++</option>
-              <option value="java">Java</option>
-              <option value="html">HTML</option>
-              <option value="css">CSS</option>
-              <option value="typescript">TypeScript</option>
-              <option value="go">Go</option>
-              <option value="rust">Rust</option>
-              <option value="bash">Bash</option>
-              <option value="sql">SQL</option>
+              {LANGUAGE_OPTIONS.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
             </select>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span>Font</span>
+          {/* Font Size */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-gray-500 text-[10px] font-semibold uppercase">Size</span>
             <select
               value={fontSizeSelected}
               onChange={e => {
@@ -702,300 +928,339 @@ export default function EditorPage() {
                 setFontSizeSelected(s)
                 dispatch(setFontSize(s))
               }}
-              className="bg-[#2d2d2d] border border-gray-700 rounded-xl px-3 py-1.5 text-white outline-none cursor-pointer font-semibold"
+              className="bg-[#0D1117] border border-gray-800 rounded-lg px-2.5 py-1.5 text-white text-xs outline-none cursor-pointer font-semibold hover:border-gray-600 transition-colors"
             >
               {[12, 13, 14, 15, 16, 18, 20].map(s => <option key={s} value={s}>{s}px</option>)}
             </select>
           </div>
 
-          <button 
-            onClick={() => setIsLightMode(!isLightMode)} 
-            className="px-3.5 py-1.5 bg-[#2d2d2d] border border-gray-700 rounded-xl text-gray-300 hover:text-white transition-colors"
+          {/* Theme Toggle */}
+          <button
+            onClick={() => setIsLightMode(!isLightMode)}
+            className="px-3 py-1.5 bg-[#0D1117] border border-gray-800 rounded-lg text-gray-400 hover:text-white hover:border-gray-600 transition-all text-xs font-semibold"
           >
-            {isLightMode ? '🌙 Dark Mode' : '☀️ Light Mode'}
+            {isLightMode ? '🌙 Dark' : '☀️ Light'}
           </button>
         </div>
 
-        {/* Right Header Group */}
+        {/* Right: Status + Actions + Avatars */}
         <div className="flex items-center gap-4 text-xs text-gray-300">
-          <div className="flex flex-col text-right">
-            <span className="text-[10px] text-gray-400 font-semibold">🟢 Connected</span>
-            <span className="text-[9px] text-green-400 font-semibold">✓ Saved</span>
+          {/* Connection & Save Status */}
+          <div className="flex flex-col items-end gap-0.5">
+            <span className="text-[9px] text-gray-500 font-semibold flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+              Connected
+            </span>
+            <span className="text-[9px] text-gray-500 font-semibold">
+              {editorState.isSaving ? '⏳ Saving...' : editorState.lastSaved ? `✓ ${editorState.lastSaved}` : '✓ Saved'}
+            </span>
           </div>
-          
-          <button 
-            onClick={handleCopyLink} 
-            className="p-1.5 hover:bg-gray-800 rounded transition-colors text-gray-400 hover:text-white flex items-center gap-1.5 text-xs border border-gray-800"
-            title="Invite Collaborators"
+
+          {/* Share Button */}
+          <button
+            onClick={handleCopyLink}
+            className="px-3 py-1.5 hover:bg-[#1e1e1e] rounded-lg transition-colors text-gray-400 hover:text-white flex items-center gap-1.5 text-xs border border-gray-800 font-semibold"
+            title="Copy Share Link"
           >
-            <FiShare2 size={13} /> Share
+            <FiShare2 size={12} /> Share
           </button>
 
+          {/* Presence Avatars */}
           <PresenceBar collaborators={editorState.collaborators} />
-          
-          <div className="w-8 h-8 rounded-full border-2 border-gray-700 overflow-hidden flex items-center justify-center bg-gray-800 text-white shadow-md">
+
+          {/* User Avatar */}
+          <div className="w-8 h-8 rounded-full border-2 border-gray-700 overflow-hidden flex items-center justify-center bg-[#0D1117] text-white shadow-lg">
             {user?.avatar ? (
               <img src={user.avatar} className="w-full h-full object-cover" alt={user.username} />
             ) : (
-              <FiUser size={16} />
+              <FiUser size={15} />
             )}
           </div>
         </div>
       </header>
 
-      {/* 2. Main Three-Column Responsive Grid Layout */}
-      <main className="flex-1 overflow-y-auto p-6 md:p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[35%_40%_25%] xl:grid-cols-[30%_45%_25%] gap-6">
-        
-        {/* Left Panel: AI Mentor Review & Guide (30% width) */}
-        <section className="col-span-1 flex flex-col gap-6 overflow-y-auto custom-scrollbar pr-1">
-          <div className="p-6 bg-[#1e1e1e]/90 backdrop-blur-sm border border-gray-800 rounded-2xl shadow-md">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-blue-400 block mb-2">AI Coding Mentor</span>
-            <h1 className="text-2xl font-black text-white leading-tight tracking-tight mb-2.5">
-              Review & Mentor Panel
-            </h1>
-            <p className="text-xs text-gray-400 leading-relaxed">
-              Automated review analysis checks your workspace code for logic bugs, security warnings, performance metrics, and translates methods to simplified English.
-            </p>
+      {/* ═══════════════════════════════════════════════════════════
+          MAIN 3-COLUMN GRID
+         ═══════════════════════════════════════════════════════════ */}
+      <main className="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-[28%_47%_25%] xl:grid-cols-[25%_50%_25%]">
+
+        {/* ─────────── LEFT PANEL ─────────── */}
+        <section className="hidden lg:flex flex-col border-r border-gray-800 overflow-y-auto custom-scrollbar bg-[#161B22]">
+
+          {/* File Explorer (collapsible) */}
+          <div className="border-b border-gray-800">
+            <button
+              onClick={() => setFileExplorerOpen(!fileExplorerOpen)}
+              className="w-full px-4 py-3 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-gray-400 hover:text-gray-200 hover:bg-[#1e1e1e]/30 transition-colors"
+            >
+              <span className="flex items-center gap-1.5">
+                <FiFolder size={12} className="text-blue-400" />
+                File Explorer
+              </span>
+              <FiChevronDown size={12} className={`transition-transform ${fileExplorerOpen ? 'rotate-180' : ''}`} />
+            </button>
+            <AnimatePresence>
+              {fileExplorerOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
+                >
+                  <div className="pb-2">
+                    <FileExplorer
+                      activeFile={activeFile}
+                      onFileSelect={setActiveFile}
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
-          <div className="border border-gray-800 rounded-2xl overflow-hidden shadow-md">
-            {/* Left sidebar nav tabs */}
-            <div className="h-11 bg-[#252526] border-b border-gray-800 flex items-center px-4 gap-2 shrink-0">
-              {[
-                { id: 'review', label: 'AI Review Score', icon: FiCheckCircle },
-                { id: 'explanation', label: 'What is Happening?', icon: FiInfo },
-                { id: 'complexity', label: 'Complexity Gauge', icon: FiActivity }
-              ].map(t => (
-                <button
-                  key={t.id}
-                  onClick={() => setEditorLeftTab(t.id)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors ${editorLeftTab === t.id ? 'bg-[#1e1e1e] text-blue-400 border border-gray-700/80' : 'text-gray-400 hover:text-white'}`}
+          {/* AI Review Score (collapsible) */}
+          <div>
+            <button
+              onClick={() => setReviewOpen(!reviewOpen)}
+              className="w-full px-4 py-3 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-gray-400 hover:text-gray-200 hover:bg-[#1e1e1e]/30 transition-colors"
+            >
+              <span className="flex items-center gap-1.5">
+                <FiStar size={12} className="text-yellow-400" />
+                Code Quality Metrics
+              </span>
+              <FiChevronDown size={12} className={`transition-transform ${reviewOpen ? 'rotate-180' : ''}`} />
+            </button>
+            <AnimatePresence>
+              {reviewOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
                 >
-                  <t.icon size={12} /> {t.label}
-                </button>
-              ))}
-            </div>
-
-            <div className="p-6 bg-[#1e1e1e] text-sm leading-[1.8] text-gray-300">
-              {editorLeftTab === 'review' && (
-                <div className="flex flex-col gap-5">
-                  <div className="p-4 bg-[#2d2d2d] rounded-xl border border-gray-700/60 flex items-center justify-between shadow-sm">
-                    <div>
-                      <span className="text-[10px] text-gray-400 uppercase tracking-wider font-bold mb-0.5">Overall Code Score</span>
-                      <span className="text-xl font-extrabold text-green-400 block">9.2 / 10</span>
-                    </div>
-                    <FiStar size={20} className="text-green-400" />
-                  </div>
-
-                  <div className="flex flex-col gap-3">
-                    <span className="text-xs font-bold uppercase tracking-wider text-gray-450">Review Checklist</span>
-                    {[
-                      { label: 'Bugs & Logical errors', status: 'Clear', color: 'text-green-400' },
-                      { label: 'Security & Token leakage', status: 'Clear', color: 'text-green-400' },
-                      { label: 'Infinite loop recursion risks', status: 'Pass', color: 'text-green-400' },
-                      { label: 'Variable naming readability', status: 'Clean', color: 'text-green-400' }
-                    ].map((item, i) => (
-                      <div key={i} className="flex justify-between items-center text-xs p-2.5 bg-[#2d2d2d]/40 rounded-xl border border-gray-850">
-                        <span className="text-gray-300">{item.label}</span>
-                        <span className={`font-bold ${item.color}`}>{item.status}</span>
+                  <div className="px-4 pb-4 space-y-3">
+                    {/* Overall Score */}
+                    <div className="p-4 bg-[#0D1117] rounded-xl border border-gray-800 flex items-center justify-between">
+                      <div>
+                        <span className="text-[9px] text-gray-500 uppercase tracking-wider font-bold block">Overall Score</span>
+                        <span className="text-2xl font-black text-green-400">9.2<span className="text-sm text-gray-500 font-medium"> /10</span></span>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {editorLeftTab === 'explanation' && (
-                <div className="flex flex-col gap-4">
-                  <span className="text-xs font-bold uppercase tracking-wider text-gray-450">Simplified English Translation</span>
-                  <div className="p-4 bg-[#2d2d2d]/30 border border-gray-800 rounded-xl leading-relaxed text-gray-300 text-xs">
-                    This file imports CodeFusion collaborative bindings, configures a real-time event socket sync handler, and listens for cursor coordinate changes to update the multiplayer workspace.
-                  </div>
-                </div>
-              )}
-
-              {editorLeftTab === 'complexity' && (
-                <div className="flex flex-col gap-4">
-                  <span className="text-xs font-bold uppercase tracking-wider text-gray-455">Complexity Estimate</span>
-                  <div className="grid grid-cols-2 gap-4 text-xs">
-                    <div className="p-3 bg-[#2d2d2d]/40 rounded-xl border border-gray-850">
-                      <span className="text-gray-450 block mb-0.5">Time Complexity</span>
-                      <span className="font-extrabold text-blue-400">O(N) Linear</span>
+                      <div className="w-12 h-12 rounded-full border-4 border-green-500/30 flex items-center justify-center">
+                        <FiStar size={18} className="text-green-400" />
+                      </div>
                     </div>
-                    <div className="p-3 bg-[#2d2d2d]/40 rounded-xl border border-gray-850">
-                      <span className="text-gray-455 block mb-0.5">Space Complexity</span>
-                      <span className="font-extrabold text-blue-400">O(1) Constant</span>
+
+                    {/* Checklist Items */}
+                    <div className="space-y-1.5">
+                      {[
+                        { label: 'Bugs & Logic Errors', status: 'Clear', color: 'text-green-400', icon: '✓' },
+                        { label: 'Security & Token Leakage', status: 'Clear', color: 'text-green-400', icon: '✓' },
+                        { label: 'Infinite Loop Risks', status: 'Pass', color: 'text-green-400', icon: '✓' },
+                        { label: 'Naming Readability', status: 'Good', color: 'text-green-400', icon: '✓' },
+                        { label: 'Code Complexity', status: 'O(N)', color: 'text-blue-400', icon: '◆' },
+                        { label: 'Test Coverage', status: '72%', color: 'text-yellow-400', icon: '◆' },
+                      ].map((item, i) => (
+                        <div key={i} className="flex justify-between items-center text-xs p-2.5 bg-[#0D1117]/60 rounded-lg border border-gray-800/50">
+                          <span className="text-gray-400 flex items-center gap-1.5">
+                            <span className={`text-[10px] ${item.color}`}>{item.icon}</span>
+                            {item.label}
+                          </span>
+                          <span className={`font-bold text-[11px] ${item.color}`}>{item.status}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Performance Tip */}
+                    <div className="p-3 bg-blue-500/5 border border-blue-500/20 rounded-lg text-[10px] text-blue-300 leading-relaxed">
+                      💡 <strong>Tip:</strong> Keep variables local inside loops to minimize garbage collection latency.
                     </div>
                   </div>
-                  <div className="text-xs text-gray-400 mt-2 leading-relaxed">
-                    💡 Performance suggestion: Keep variables local inside loops to minimize garbage collection latency.
-                  </div>
-                </div>
+                </motion.div>
               )}
-            </div>
+            </AnimatePresence>
           </div>
         </section>
 
-        {/* Center Panel: Code Editor (45% width) */}
-        <section className="col-span-1 flex flex-col gap-6 overflow-hidden">
-          <DashboardHeader 
-            isVisible={dashboardVisible} 
-            onClose={() => setDashboardVisible(false)}
-          />
+        {/* ─────────── CENTER PANEL — EDITOR ─────────── */}
+        <section className="flex flex-col overflow-hidden bg-[#1e1e1e]">
 
-          <div className="flex-1 flex flex-col bg-[#1e1e1e] border border-gray-800 rounded-2xl overflow-hidden shadow-md">
-            {/* Editor Toolbar Header */}
-            <div className="h-12 bg-[#252526] border-b border-gray-800 flex items-center justify-between px-4 shrink-0">
-              <div className="flex gap-2">
-                <span className="px-3.5 py-1.5 text-xs bg-[#1e1e1e] border-t-2 border-t-blue-500 border-x border-x-gray-800 text-blue-400 font-bold flex items-center gap-1.5">
-                  <FiCode size={12} /> solution.{editorState.language === 'python' ? 'py' : editorState.language === 'cpp' ? 'cpp' : 'js'}
-                </span>
-              </div>
+          {/* File Tabs */}
+          <div className="h-10 bg-[#161B22] border-b border-gray-800 flex items-center overflow-x-auto shrink-0 custom-scrollbar">
+            {fileTabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveFile(tab.id)}
+                className={`flex items-center gap-1.5 px-4 h-full text-xs font-medium border-r border-gray-800 transition-colors whitespace-nowrap ${
+                  activeFile === tab.id
+                    ? 'bg-[#1e1e1e] text-white border-t-2 border-t-blue-500'
+                    : 'text-gray-500 hover:text-gray-300 hover:bg-[#1e1e1e]/50'
+                }`}
+              >
+                <FiFile size={11} className={activeFile === tab.id ? 'text-blue-400' : 'text-gray-600'} />
+                {tab.name}
+              </button>
+            ))}
+          </div>
 
-              {/* Toolbar button icons */}
-              <div className="flex items-center gap-3">
-                <button 
-                  onClick={handleResetCode} 
-                  className="p-1.5 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white transition-colors"
-                  title="Reset Solution Template"
-                >
-                  <FiTrash2 size={14} />
-                </button>
-                <button 
-                  onClick={() => dispatch(toggleWordWrap())} 
-                  className={`px-2 py-1 rounded text-xs border ${editorState.wordWrap ? 'bg-blue-600/20 border-blue-500 text-blue-400' : 'bg-transparent border-gray-700 text-gray-400'} hover:bg-gray-800 transition-colors`}
-                  title="Toggle Word Wrap"
-                >
-                  Wrap
-                </button>
-                <button 
-                  onClick={() => dispatch(toggleMinimap())} 
-                  className={`px-2 py-1 rounded text-xs border ${editorState.minimap ? 'bg-blue-600/20 border-blue-500 text-blue-400' : 'bg-transparent border-gray-700 text-gray-400'} hover:bg-gray-800 transition-colors`}
-                  title="Toggle Minimap"
-                >
-                  Minimap
-                </button>
-                <button 
-                  onClick={() => dispatch(toggleFullscreen())} 
-                  className="p-1.5 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white transition-colors"
-                  title="Toggle Fullscreen"
-                >
-                  {editorState.isFullscreen ? <FiMinimize size={14} /> : <FiMaximize size={14} />}
-                </button>
-              </div>
+          {/* Editor Toolbar */}
+          <div className="h-10 bg-[#161B22] border-b border-gray-800 flex items-center justify-between px-4 shrink-0">
+            <div className="flex items-center gap-1">
+              <button
+                onClick={handleResetCode}
+                className="p-1.5 hover:bg-[#0D1117] rounded-md text-gray-500 hover:text-gray-300 transition-colors"
+                title="Reset to Template"
+              >
+                <FiRefreshCw size={13} />
+              </button>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => dispatch(toggleWordWrap())}
+                className={`px-2 py-1 rounded-md text-[10px] font-bold border transition-colors ${
+                  editorState.wordWrap
+                    ? 'bg-blue-600/15 border-blue-500/40 text-blue-400'
+                    : 'border-gray-800 text-gray-500 hover:text-gray-300'
+                }`}
+                title="Toggle Word Wrap"
+              >
+                Wrap
+              </button>
+              <button
+                onClick={() => dispatch(toggleMinimap())}
+                className={`px-2 py-1 rounded-md text-[10px] font-bold border transition-colors ${
+                  editorState.minimap
+                    ? 'bg-blue-600/15 border-blue-500/40 text-blue-400'
+                    : 'border-gray-800 text-gray-500 hover:text-gray-300'
+                }`}
+                title="Toggle Minimap"
+              >
+                Minimap
+              </button>
+              <button
+                onClick={() => dispatch(toggleFullscreen())}
+                className="p-1.5 hover:bg-[#0D1117] rounded-md text-gray-500 hover:text-gray-300 transition-colors"
+                title="Toggle Fullscreen"
+              >
+                {editorState.isFullscreen ? <FiMinimize size={13} /> : <FiMaximize size={13} />}
+              </button>
+            </div>
+          </div>
+
+          {/* Monaco Editor */}
+          <div className="flex-1 flex flex-col overflow-hidden relative">
+            <div className={`flex-1 relative ${isWebLanguage ? 'h-1/2 border-b border-gray-800' : 'h-full'}`}>
+              <Editor
+                height="100%"
+                language={editorState.language}
+                theme={isLightMode ? 'light' : 'vs-dark'}
+                value={editorState.code}
+                onChange={handleEditorChange}
+                onMount={handleEditorDidMount}
+                options={{
+                  fontSize: fontSizeSelected,
+                  minimap: { enabled: editorState.minimap },
+                  wordWrap: editorState.wordWrap ? 'on' : 'off',
+                  tabSize: 2,
+                  fontFamily: 'JetBrains Mono, Fira Code, monospace',
+                  cursorBlinking: 'smooth',
+                  smoothScrolling: true,
+                  lineHeight: 22,
+                  padding: { top: 16 },
+                  renderLineHighlight: 'all',
+                  bracketPairColorization: { enabled: true },
+                  scrollBeyondLastLine: false,
+                }}
+              />
             </div>
 
-            {/* Monaco Editor body */}
-            <div className="flex-1 flex flex-col overflow-hidden relative">
-              <div className={`flex-1 relative ${isWebLanguage ? 'h-1/2 border-b border-gray-850' : 'h-full'}`}>
-                <Editor
-                  height="100%"
-                  language={editorState.language}
-                  theme={isLightMode ? 'light' : 'vs-dark'}
-                  value={editorState.code}
-                  onChange={handleEditorChange}
-                  onMount={handleEditorDidMount}
-                  options={{
-                    fontSize: fontSizeSelected,
-                    minimap: { enabled: editorState.minimap },
-                    wordWrap: editorState.wordWrap ? 'on' : 'off',
-                    tabSize: 2,
-                    fontFamily: 'JetBrains Mono, monospace',
-                    cursorBlinking: 'smooth',
-                    smoothScrolling: true,
-                    lineHeight: 24,
-                    padding: { top: 16 }
-                  }}
+            {/* Live HTML Preview */}
+            {isWebLanguage && (
+              <div className="h-1/2 bg-white flex flex-col">
+                <div className="h-8 bg-[#f3f4f6] border-b border-gray-300 flex items-center px-4 justify-between shrink-0">
+                  <span className="text-[10px] font-extrabold text-gray-500 uppercase tracking-wider">Live Preview</span>
+                  <button
+                    onClick={() => setLivePreviewCode(editorState.code)}
+                    className="p-1 hover:bg-gray-200 rounded text-gray-500 hover:text-gray-900 transition-colors"
+                    title="Refresh Preview"
+                  >
+                    <FiRefreshCw size={11} />
+                  </button>
+                </div>
+                <iframe
+                  title="live-preview"
+                  srcDoc={iframeSrcDoc}
+                  className="flex-1 border-none w-full bg-white"
+                  sandbox="allow-scripts"
                 />
               </div>
-
-              {/* Real-time HTML preview pane */}
-              {isWebLanguage && (
-                <div className="h-1/2 bg-white flex flex-col">
-                  <div className="h-8 bg-[#f3f4f6] border-b border-gray-300 flex items-center px-4 justify-between shrink-0">
-                    <span className="text-[10px] font-extrabold text-gray-500 uppercase tracking-wider">Live Split Preview</span>
-                    <button 
-                      onClick={() => setLivePreviewCode(editorState.code)}
-                      className="p-1 hover:bg-gray-200 rounded text-gray-500 hover:text-gray-900 transition-colors"
-                      title="Force Refresh Preview"
-                    >
-                      <FiRefreshCw size={11} />
-                    </button>
-                  </div>
-                  <iframe
-                    title="live-preview"
-                    srcDoc={iframeSrcDoc}
-                    className="flex-1 border-none w-full bg-white"
-                    sandbox="allow-scripts"
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Editor Bottom Info bar */}
-            <footer className="h-6 bg-[#1a1a1c] border-t border-gray-800/80 flex items-center justify-between px-4 text-[10px] text-gray-400 font-mono select-none">
-              <div className="flex items-center gap-4">
-                <span>{editorState.language?.toUpperCase()}</span>
-                <span>Spaces: 2</span>
-                <span>UTF-8</span>
-                <span>LF</span>
-              </div>
-              <div className="flex items-center gap-4">
-                <span>Branch: <strong className="text-gray-300">main</strong></span>
-                <span>Autosave: <strong className="text-green-500">Active</strong></span>
-              </div>
-            </footer>
+            )}
           </div>
+
+          {/* Bottom Status Bar */}
+          <footer className="h-7 bg-[#0D1117] border-t border-gray-800 flex items-center justify-between px-4 text-[10px] text-gray-500 font-mono select-none shrink-0">
+            <div className="flex items-center gap-4">
+              <span className="text-gray-400 font-bold">{editorState.language?.toUpperCase()}</span>
+              <span>Spaces: 2</span>
+              <span>UTF-8</span>
+              <span>LF</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="flex items-center gap-1">
+                <FiGitBranch size={10} className="text-gray-600" />
+                <strong className="text-gray-400">main</strong>
+              </span>
+              <span>
+                Autosave: <strong className="text-green-500">Active</strong>
+              </span>
+            </div>
+          </footer>
         </section>
 
-        {/* Right Panel: AI Assistant + Compiler Tests (25% width) */}
-        <section className="col-span-1 md:col-span-2 lg:col-span-1 flex flex-col bg-[#252526] border border-gray-800 rounded-2xl overflow-hidden shadow-md max-h-full">
-          <div className="h-11 bg-[#252526] border-b border-gray-800 flex items-center justify-between px-4 shrink-0">
-            <div className="flex gap-2">
-              {[
-                { id: 'ai', label: 'AI Copilot', icon: FiCpu },
-                { id: 'execution', label: 'Compiler', icon: FiTerminal },
-                { id: 'chat', label: 'Collab Chat', icon: FiMessageSquare }
-              ].map(t => (
-                <button
-                  key={t.id}
-                  onClick={() => setActiveTab(t.id)}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors ${activeTab === t.id ? 'bg-[#1e1e1e] text-blue-400 border border-gray-700/80' : 'text-gray-400 hover:text-white'}`}
-                >
-                  <t.icon size={12} /> {t.label}
-                </button>
-              ))}
-            </div>
-            
-            <button 
-              onClick={() => setDashboardVisible(true)}
-              className="p-1 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white transition-colors"
-              title="Open Dashboard Stats"
-            >
-              <FiAward size={15} />
-            </button>
+        {/* ─────────── RIGHT PANEL — TABBED ─────────── */}
+        <section className="flex flex-col border-l border-gray-800 overflow-hidden bg-[#161B22]">
+
+          {/* Tabs */}
+          <div className="h-11 bg-[#0D1117] border-b border-gray-800 flex items-center px-2 gap-1 shrink-0">
+            {rightPanelTabs.map(t => (
+              <button
+                key={t.id}
+                onClick={() => setActiveTab(t.id)}
+                className={`flex-1 py-2 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all ${
+                  activeTab === t.id
+                    ? 'bg-[#161B22] text-blue-400 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-300 hover:bg-[#161B22]/50'
+                }`}
+              >
+                <t.icon size={13} />
+                {t.label}
+              </button>
+            ))}
           </div>
 
-          <div className="flex-1 overflow-hidden bg-[#1e1e1e]">
-            {activeTab === 'chat' && (
-              <TeamChatPanel 
-                projectId={projectId} 
-                user={user} 
-                messages={messages} 
-                onSendMessage={handleSendMessage} 
-              />
-            )}
+          {/* Panel Content */}
+          <div className="flex-1 overflow-hidden">
             {activeTab === 'ai' && (
-              <AIPanel 
-                language={editorState.language} 
-                getSelectedCode={getSelectedCode} 
+              <AIMentorPanel
+                language={editorState.language}
+                getSelectedCode={getSelectedCode}
               />
             )}
             {activeTab === 'execution' && (
-              <ExecutionPanel 
-                output={editorState.output} 
-                isRunning={editorState.isRunning} 
-                onRunCode={handleRunCode} 
+              <ExecutionPanel
+                output={editorState.output}
+                isRunning={editorState.isRunning}
+                onRunCode={handleRunCode}
                 onTestCases={handleRunTestCases}
+              />
+            )}
+            {activeTab === 'chat' && (
+              <TeamChatPanel
+                projectId={projectId}
+                user={user}
+                messages={messages}
+                onSendMessage={handleSendMessage}
               />
             )}
           </div>

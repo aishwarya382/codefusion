@@ -5,11 +5,20 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   FiCode, FiSun, FiMoon, FiBell, FiSearch, FiSettings,
   FiLogOut, FiUser, FiChevronDown, FiZap, FiShield,
-  FiCommand, FiMenu,
+  FiCommand, FiMenu, FiMessageSquare, FiUsers,
 } from 'react-icons/fi'
 import { selectUser, selectIsAuthenticated, logout } from '../../store/slices/authSlice'
 import { selectTheme, toggleTheme, setSearchOpen, setNotificationsOpen } from '../../store/slices/uiSlice'
 import { selectUnreadCount } from '../../store/slices/notificationSlice'
+
+const navLinks = [
+  { label: 'Dashboard', to: '/dashboard' },
+  { label: 'Community', to: '/dashboard?tab=explore' },
+  { label: 'Projects', to: '/dashboard?tab=projects' },
+  { label: 'Groups', to: '/dashboard?tab=friends' },
+  { label: 'Learning', to: '/dashboard?tab=learning' },
+  { label: 'AI Mentor', to: '/dashboard?tab=ai' },
+]
 
 export default function Navbar({ onMenuToggle }) {
   const dispatch = useDispatch()
@@ -42,38 +51,28 @@ export default function Navbar({ onMenuToggle }) {
 
   const avatar = user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'U')}&background=6366F1&color=fff&bold=true&size=64`
 
-  const navStyle = {
-    position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
-    height: 'var(--nav-h)',
-    transition: 'background 0.2s, border-color 0.2s, backdrop-filter 0.2s',
-    background: scrolled || !isLanding ? 'rgba(9,9,11,0.88)' : 'transparent',
-    backdropFilter: scrolled || !isLanding ? 'blur(24px) saturate(180%)' : 'none',
-    WebkitBackdropFilter: scrolled || !isLanding ? 'blur(24px) saturate(180%)' : 'none',
-    borderBottom: `1px solid ${scrolled || !isLanding ? 'var(--border)' : 'transparent'}`,
-  }
-
   return (
-    <nav style={navStyle}>
-      <div style={{ maxWidth: 1400, margin: '0 auto', padding: '0 20px', height: '100%', display: 'flex', alignItems: 'center', gap: 12 }}>
+    <nav
+      className={`fixed top-0 left-0 right-0 z-50 h-16 flex items-center transition-all duration-200 ${
+        scrolled || !isLanding
+          ? 'bg-[#0D1117]/90 backdrop-blur-xl border-b border-gray-800'
+          : 'bg-transparent border-b border-transparent'
+      }`}
+    >
+      <div className="w-full max-w-[1400px] mx-auto px-5 h-full flex items-center gap-3">
 
         {/* Logo */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+        <div className="flex items-center gap-2 shrink-0">
           {isAuth && onMenuToggle && (
-            <button onClick={onMenuToggle} className="btn btn-ghost btn-icon-sm" style={{ display: 'none' }}>
+            <button onClick={onMenuToggle} className="p-2 rounded-xl hover:bg-gray-800/60 text-gray-400 hover:text-white transition-colors hidden">
               <FiMenu size={17} />
             </button>
           )}
-          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
-            <div style={{
-              width: 28, height: 28, flexShrink: 0,
-              background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
-              borderRadius: 8,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 0 14px rgba(99,102,241,0.45)',
-            }}>
-              <FiCode size={14} color="#fff" />
+          <Link to="/" className="flex items-center gap-2 no-underline">
+            <div className="w-7 h-7 shrink-0 bg-gradient-to-br from-blue-600 to-indigo-500 rounded-xl flex items-center justify-center shadow-[0_0_14px_rgba(59,130,246,0.45)]">
+              <FiCode size={14} className="text-white" />
             </div>
-            <span style={{ fontWeight: 700, fontSize: '0.9375rem', color: 'var(--text)', letterSpacing: '-0.025em' }}>
+            <span className="font-bold text-[0.9375rem] text-white tracking-tight">
               CodeFusion
             </span>
           </Link>
@@ -83,44 +82,45 @@ export default function Navbar({ onMenuToggle }) {
         {isAuth && (
           <button
             onClick={() => dispatch(setSearchOpen(true))}
-            style={{
-              flex: 1, maxWidth: 340, minWidth: 180,
-              display: 'flex', alignItems: 'center', gap: 8,
-              padding: '7px 12px',
-              background: 'var(--surface)',
-              border: '1px solid var(--border-2)',
-              borderRadius: 'var(--r)',
-              color: 'var(--text-4)',
-              fontSize: '0.8125rem',
-              cursor: 'pointer',
-              transition: 'all var(--t-md)',
-              fontFamily: 'inherit',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--border-3)'; e.currentTarget.style.color = 'var(--text-3)' }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-2)'; e.currentTarget.style.color = 'var(--text-4)' }}
+            className="flex-1 max-w-[340px] min-w-[180px] flex items-center gap-2 py-[7px] px-3 bg-[#161B22] border border-gray-800 rounded-xl text-gray-500 text-[0.8125rem] cursor-pointer transition-all duration-200 hover:border-gray-700 hover:text-gray-400 font-[inherit]"
           >
             <FiSearch size={13} />
-            <span style={{ flex: 1, textAlign: 'left' }}>Search...</span>
-            <div style={{ display: 'flex', gap: 2 }}>
-              <kbd>⌘</kbd><kbd>K</kbd>
+            <span className="flex-1 text-left">Search...</span>
+            <div className="flex gap-0.5">
+              <kbd className="px-1.5 py-0.5 text-[0.6875rem] bg-gray-800 border border-gray-700 rounded text-gray-500 font-mono leading-none">⌘</kbd>
+              <kbd className="px-1.5 py-0.5 text-[0.6875rem] bg-gray-800 border border-gray-700 rounded text-gray-500 font-mono leading-none">K</kbd>
             </div>
           </button>
         )}
 
+        {/* Nav Links */}
+        {isAuth && (
+          <nav className="hidden lg:flex items-center gap-1">
+            {navLinks.map((link) => (
+              <Link
+                key={link.label}
+                to={link.to}
+                className="px-2.5 py-1.5 text-xs text-gray-400 hover:text-white transition-colors relative group whitespace-nowrap"
+              >
+                {link.label}
+                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-[1.5px] bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-200 group-hover:w-4/5" />
+              </Link>
+            ))}
+          </nav>
+        )}
+
         {/* Spacer */}
-        <div style={{ flex: 1 }} />
+        <div className="flex-1" />
 
         {/* Right actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
+        <div className="flex items-center gap-0.5 shrink-0">
           {/* Theme toggle */}
           <button
             onClick={() => dispatch(toggleTheme())}
-            className="btn btn-ghost btn-icon"
-            data-tip={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+            className="p-2 rounded-xl hover:bg-gray-800/60 text-gray-400 hover:text-white transition-colors"
+            title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
           >
-            {theme === 'dark'
-              ? <FiSun size={15} />
-              : <FiMoon size={15} />}
+            {theme === 'dark' ? <FiSun size={15} /> : <FiMoon size={15} />}
           </button>
 
           {isAuth ? (
@@ -128,38 +128,55 @@ export default function Navbar({ onMenuToggle }) {
               {/* Notifications */}
               <button
                 onClick={() => dispatch(setNotificationsOpen(true))}
-                className="btn btn-ghost btn-icon"
-                style={{ position: 'relative' }}
-                data-tip="Notifications"
+                className="p-2 rounded-xl hover:bg-gray-800/60 text-gray-400 hover:text-white transition-colors relative"
+                title="Notifications"
               >
                 <FiBell size={15} />
-                {unreadCount > 0 && <span className="notif-badge" />}
+                {unreadCount > 0 && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-[#0D1117]" />
+                )}
               </button>
 
-              <div className="divider-v" style={{ height: 20, margin: '0 4px' }} />
+              {/* Messages */}
+              <button
+                className="p-2 rounded-xl hover:bg-gray-800/60 text-gray-400 hover:text-white transition-colors"
+                title="Messages"
+              >
+                <FiMessageSquare size={15} />
+              </button>
+
+              {/* Friends */}
+              <button
+                className="p-2 rounded-xl hover:bg-gray-800/60 text-gray-400 hover:text-white transition-colors"
+                title="Friends"
+              >
+                <FiUsers size={15} />
+              </button>
+
+              <div className="w-px h-5 bg-gray-800 mx-1" />
 
               {/* Profile */}
-              <div ref={menuRef} style={{ position: 'relative' }}>
+              <div ref={menuRef} className="relative">
                 <button
                   onClick={() => setMenuOpen(!menuOpen)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 7,
-                    padding: '4px 8px 4px 4px',
-                    background: menuOpen ? 'var(--surface-2)' : 'transparent',
-                    border: `1px solid ${menuOpen ? 'var(--border-2)' : 'transparent'}`,
-                    borderRadius: 'var(--r)',
-                    cursor: 'pointer',
-                    transition: 'all var(--t)',
-                    fontFamily: 'inherit',
-                  }}
-                  onMouseEnter={e => { if (!menuOpen) { e.currentTarget.style.background = 'var(--surface-2)'; e.currentTarget.style.borderColor = 'var(--border)' } }}
-                  onMouseLeave={e => { if (!menuOpen) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'transparent' } }}
+                  className={`flex items-center gap-[7px] pl-1 pr-2 py-1 rounded-xl border cursor-pointer transition-all duration-150 font-[inherit] ${
+                    menuOpen
+                      ? 'bg-gray-800/80 border-gray-700'
+                      : 'bg-transparent border-transparent hover:bg-gray-800/60 hover:border-gray-800'
+                  }`}
                 >
-                  <img src={avatar} alt={user?.username} style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover', border: '1.5px solid var(--border-2)' }} />
-                  <span style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--text)', maxWidth: 90, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <img
+                    src={avatar}
+                    alt={user?.username}
+                    className="w-[26px] h-[26px] rounded-full object-cover border-[1.5px] border-gray-700"
+                  />
+                  <span className="text-[0.8125rem] font-medium text-white max-w-[90px] overflow-hidden text-ellipsis whitespace-nowrap">
                     {user?.username}
                   </span>
-                  <FiChevronDown size={12} style={{ color: 'var(--text-3)', transition: 'transform 0.2s', transform: menuOpen ? 'rotate(180deg)' : 'none' }} />
+                  <FiChevronDown
+                    size={12}
+                    className={`text-gray-400 transition-transform duration-200 ${menuOpen ? 'rotate-180' : ''}`}
+                  />
                 </button>
 
                 <AnimatePresence>
@@ -169,21 +186,28 @@ export default function Navbar({ onMenuToggle }) {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 6, scale: 0.96 }}
                       transition={{ duration: 0.14, ease: [0.4, 0, 0.2, 1] }}
-                      className="dropdown"
-                      style={{ position: 'absolute', right: 0, top: 'calc(100% + 6px)', width: 224, zIndex: 200 }}
+                      className="absolute right-0 top-[calc(100%+6px)] w-56 z-[200] bg-[#161B22] border border-gray-800 rounded-xl shadow-2xl shadow-black/50 overflow-hidden"
                     >
                       {/* User info */}
-                      <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--border)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <img src={avatar} alt="" style={{ width: 38, height: 38, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border-2)' }} />
-                          <div style={{ minWidth: 0 }}>
-                            <p style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.username}</p>
-                            <p style={{ fontSize: '0.75rem', color: 'var(--text-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email}</p>
+                      <div className="px-3.5 py-3 border-b border-gray-800">
+                        <div className="flex items-center gap-2.5">
+                          <img
+                            src={avatar}
+                            alt=""
+                            className="w-[38px] h-[38px] rounded-full object-cover border-2 border-gray-700"
+                          />
+                          <div className="min-w-0">
+                            <p className="font-semibold text-sm text-white overflow-hidden text-ellipsis whitespace-nowrap">
+                              {user?.username}
+                            </p>
+                            <p className="text-xs text-gray-400 overflow-hidden text-ellipsis whitespace-nowrap">
+                              {user?.email}
+                            </p>
                           </div>
                         </div>
                         {user?.role && (
-                          <div style={{ marginTop: 8 }}>
-                            <span className="badge badge-primary" style={{ fontSize: '0.6875rem' }}>
+                          <div className="mt-2">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[0.6875rem] font-medium bg-indigo-500/15 text-indigo-400 rounded-md">
                               <FiZap size={9} /> {user.role}
                             </span>
                           </div>
@@ -191,22 +215,37 @@ export default function Navbar({ onMenuToggle }) {
                       </div>
 
                       {/* Links */}
-                      <div style={{ padding: 6 }}>
-                        <Link to={`/profile/${user?.username}`} onClick={() => setMenuOpen(false)} className="dropdown-item">
+                      <div className="p-1.5">
+                        <Link
+                          to={`/profile/${user?.username}`}
+                          onClick={() => setMenuOpen(false)}
+                          className="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800/70 rounded-lg transition-colors no-underline"
+                        >
                           <FiUser size={14} /> Profile
                         </Link>
-                        <Link to="/settings" onClick={() => setMenuOpen(false)} className="dropdown-item">
+                        <Link
+                          to="/settings"
+                          onClick={() => setMenuOpen(false)}
+                          className="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800/70 rounded-lg transition-colors no-underline"
+                        >
                           <FiSettings size={14} /> Settings
                         </Link>
                         {user?.role === 'admin' && (
-                          <Link to="/admin" onClick={() => setMenuOpen(false)} className="dropdown-item">
+                          <Link
+                            to="/admin"
+                            onClick={() => setMenuOpen(false)}
+                            className="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800/70 rounded-lg transition-colors no-underline"
+                          >
                             <FiShield size={14} /> Admin Panel
                           </Link>
                         )}
                       </div>
 
-                      <div style={{ padding: 6, borderTop: '1px solid var(--border)' }}>
-                        <button onClick={handleLogout} className="dropdown-item danger" style={{ width: '100%' }}>
+                      <div className="p-1.5 border-t border-gray-800">
+                        <button
+                          onClick={handleLogout}
+                          className="flex items-center gap-2.5 px-3 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors w-full font-[inherit] cursor-pointer bg-transparent border-none"
+                        >
                           <FiLogOut size={14} /> Sign out
                         </button>
                       </div>
@@ -216,14 +255,17 @@ export default function Navbar({ onMenuToggle }) {
               </div>
             </>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 8 }}>
-              <Link to="/login" style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-2)', textDecoration: 'none', padding: '6px 10px', borderRadius: 'var(--r)', transition: 'color var(--t)' }}
-                onMouseEnter={e => e.currentTarget.style.color = 'var(--text)'}
-                onMouseLeave={e => e.currentTarget.style.color = 'var(--text-2)'}
+            <div className="flex items-center gap-2 ml-2">
+              <Link
+                to="/login"
+                className="text-sm font-medium text-gray-400 hover:text-white no-underline px-2.5 py-1.5 rounded-xl transition-colors"
               >
                 Sign in
               </Link>
-              <Link to="/register" className="btn btn-primary btn-sm">
+              <Link
+                to="/register"
+                className="text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-500 hover:from-blue-500 hover:to-indigo-400 px-4 py-1.5 rounded-xl transition-all duration-200 no-underline shadow-lg shadow-blue-500/20"
+              >
                 Get started
               </Link>
             </div>
